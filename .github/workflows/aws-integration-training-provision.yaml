@@ -40,8 +40,6 @@ jobs:
       env:
         NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
     - run: |
-        export AWS_ACCESS_KEY_ID=foo
-        export AWS_SECRET_ACCESS_KEY=bar
         aws cloudformation create-stack \
           --stack-name datadog-sales-training-setup \
           --region us-east-1 \
