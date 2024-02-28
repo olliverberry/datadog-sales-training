@@ -30,9 +30,9 @@ jobs:
         do
             if [ $i -eq $NUM_USERS ]
             then
-                IAM_USERS+="$IAM_USERSuser$i"
+                IAM_USERS+="user${i}"
             else
-                IAM_USERS+="$IAM_USERSuser$i\\,"
+                IAM_USERS+="user${i}\\,"
             fi
         done
         echo "iam-users=$IAM_USERS" >> "$GITHUB_OUTPUT"
