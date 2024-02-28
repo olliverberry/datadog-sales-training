@@ -15,8 +15,7 @@ Parameters:
     Type: String
     Description: password for IAM users
     MinLength: 10
-    MaxLength: 41
-    AllowedPattern: ^[a-zA-Z0-9]*$
+    MaxLength: 40
 
 Resources:
   'Fn::ForEach::CreateIAMUsers':
