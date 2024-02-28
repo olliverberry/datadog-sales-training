@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::LanguageExtensions'
+Description: 'CloudFormation template for creating the following resources for sales training:
+  1. A variable number of IAM users in an AWS account
+  2. An EC2 instance running t2.micro
+  3. An ECS Cluster with 1 service running in it'
+
+Parameters:
+  IAMUserNames:
+    Type: String
+    Description: a comma separated list of alphanumeric strings
+    Default: 'user1,user2,user3'
+  
+  IAMUserPassword:
+    Type: String
+    Description: password for IAM users
+    MinLength: 10
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9]*$
+
+Resources:
+  'Fn::ForEach::CreateIAMUsers':
+    - UserName
+    - !Split [",", !Ref IAMUserNames]
+    - '${UserName}':
+        Type: AWS::IAM::User
+        Properties:
+          UserName: !Ref UserName
+          LoginProfile:
+            Password: !Ref IAMUserPassword
+          Policies: 
+          - PolicyName: sales-training-admin-access
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+  SalesTrainingVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: datadog-sales-training-vpc
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: datadog-sales-training-ig
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref SalesTrainingInternetGateway
+      VpcId: !Ref SalesTrainingVPC
+
+  SalesTrainingPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SalesTrainingVPC
+      AvailabilityZone: "us-east-1a"
+      CidrBlock: 10.0.0.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: datadog-sales-training-public-subnet
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref SalesTrainingVPC
+      Tags:
+        - Key: Name
+          Value: datadog-sales-training-rt
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingDefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: SalesTrainingInternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref SalesTrainingRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref SalesTrainingInternetGateway
+
+  SalesTrainingPublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SalesTrainingRouteTable
+      SubnetId: !Ref SalesTrainingPublicSubnet
+
+  SalesTrainingSSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "ssh-access"
+      GroupDescription: "Security Group for SSH Access"
+      VpcId: !Ref SalesTrainingVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          ToPort: 22
+          FromPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: datadog-sales-ssh-sg
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingOutboundSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "outbound-all"
+      GroupDescription: "Security Group for all outbound traffic"
+      VpcId: !Ref SalesTrainingVPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: datadog-sales-outbound-sg
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingKeyPair:
+    Type: 'AWS::EC2::KeyPair'
+    Properties:
+      KeyName: sales-training-kp
+      KeyType: ed25519
+
+  SalesTrainingEc2Instance: 
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: 'ami-0440d3b780d96b29d'
+      KeyName: 
+        Ref: SalesTrainingKeyPair
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          GroupSet: 
+            - Ref: SalesTrainingSSHSecurityGroup
+            - Ref: SalesTrainingOutboundSecurityGroup
+          SubnetId: 
+            Ref: SalesTrainingPublicSubnet
+      Tags:
+        - Key: Name
+          Value: datadog-sales-ec2
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingLogGroup: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 1
+      LogGroupName: '/datadog/aws-integration-sales-training'
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: datadog-sales-ecs-cluster
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
+  SalesTrainingECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: 'smehrens/log-generation'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /datadog/aws-integration-sales-training
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: log-generation
+          Name: log-generation-service
+      Cpu: 256
+      ExecutionRoleArn: !Join [ '', [ 'arn:aws:iam::', !Ref AWS::AccountId,  ':role/ecsTaskExecutionRole'] ]
+      Family: datadog-sales-training-log-generation
+      Memory: 512
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: X86_64
+
+  SalesTrainingECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: datadog-sales-training-log-generation-service
+      Cluster: !Ref SalesTrainingECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SalesTrainingOutboundSecurityGroup
+          Subnets:
+            - !Ref SalesTrainingPublicSubnet
+      TaskDefinition: !Ref SalesTrainingECSTaskDefinition
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog

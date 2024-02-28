@@ -1,0 +1,25 @@
+name: 'delete AWS resources'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to delete the AWS Stack in'
+        type: environment
+        required: true
+
+jobs:
+  log-the-inputs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    - run: |
+        aws cloudformation delete-stack \
+          --stack-name datadog-sales-training-setup \
+          --region us-east-1

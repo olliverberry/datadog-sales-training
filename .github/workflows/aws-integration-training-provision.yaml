@@ -1,0 +1,38 @@
+name: 'create aws resources'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to create AWS Stack in'
+        type: environment
+        required: true
+      iamUserNames:
+        description: 'A comma separated list of users to create in AWS. ex: "user1,user2,user3"'
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./aws-integration
+
+jobs:
+  log-the-inputs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    - run: |
+        aws cloudformation create-stack \
+          --stack-name datadog-sales-training-setup \
+          --region us-east-1 \
+          --template-body=file://./infrastructure/cloudformation/template.yaml \
+          --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM CAPABILITY_IAM \
+          --parameters ParameterKey=IAMUserPassword,ParameterValue=${{ secrets.IAM_USER_PASSWORD }} \
+          ParameterKey=IAMUserNames,ParameterValue=${{ inputs.iamUserNames }}
