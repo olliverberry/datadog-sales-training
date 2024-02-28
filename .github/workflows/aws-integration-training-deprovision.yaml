@@ -11,6 +11,9 @@ on:
 jobs:
   log-the-inputs:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
     - uses: actions/checkout@v3
     - name: Configure AWS Credentials
