@@ -20,22 +20,12 @@ defaults:
 jobs:
   create-aws-infrastructure:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     steps:
     - uses: actions/checkout@v3
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
     - run: |
         aws cloudformation create-stack \
           --stack-name datadog-sales-training-setup \
           --region us-east-1 \
           --template-body=file://./infrastructure/cloudformation/template.yaml \
           --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM CAPABILITY_IAM \
-          --parameters ParameterKey=IAMUserPassword,ParameterValue=${{ secrets.IAM_USER_PASSWORD }} \
-          ParameterKey=IAMUserNames,ParameterValue=${{ inputs.iamUserNames }}
+          --parameters ParameterKey=IAMUserPassword,ParameterValue=${{ secrets.IAM_USER_PASSWORD }} ParameterKey=IAMUserNames,ParameterValue=${{ inputs.iamUserNames }}
