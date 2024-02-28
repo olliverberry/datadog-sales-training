@@ -9,6 +9,7 @@ Parameters:
   IAMUserNames:
     Type: CommaDelimitedList
     Description: a comma separated list of alphanumeric strings
+    Default: "user1, user2, user3"
   
   IAMUserPassword:
     Type: String

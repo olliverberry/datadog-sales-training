@@ -7,9 +7,10 @@ on:
         description: 'Environment to create AWS Stack in'
         type: environment
         required: true
-      iamUserNames:
-        description: 'A comma separated list of users to create in AWS. ex: "user1,user2,user3"'
+      numberOfIamUsersToCreate:
+        description: 'the number of IAM users to create'
         type: string
+        default: '10'
         required: true
 
 defaults:
@@ -22,10 +23,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - id: create-iam-users-string
+      run: |
+        IAM_USERS=""
+        for ((i=1; i<=$NUM_USERS; i++))
+        do
+            if [ $i -eq $NUM_USERS ]
+            then
+                IAM_USERS+="$IAM_USERSuser$i"
+            else
+                IAM_USERS+="$IAM_USERSuser$i\\,"
+            fi
+        done
+        echo "iam-users=$IAM_USERS" >> "$GITHUB_OUTPUT"
+      env:
+        NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
     - run: |
         aws cloudformation create-stack \
           --stack-name datadog-sales-training-setup \
           --region us-east-1 \
           --template-body=file://./infrastructure/cloudformation/template.yaml \
           --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM CAPABILITY_IAM \
-          --parameters ParameterKey=IAMUserPassword,ParameterValue=${{ secrets.IAM_USER_PASSWORD }} ParameterKey=IAMUserNames,ParameterValue=${{ inputs.iamUserNames }}
+          --parameters ParameterKey=IAMUserPassword,ParameterValue=${{ secrets.IAM_USER_PASSWORD }} \
+          ParameterKey=IAMUserNames,ParameterValue=${{ steps.create-iam-users-string.outputs.iam-users }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
