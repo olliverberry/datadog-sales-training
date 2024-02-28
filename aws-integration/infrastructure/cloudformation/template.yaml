@@ -7,9 +7,8 @@ Description: 'CloudFormation template for creating the following resources for s
 
 Parameters:
   IAMUserNames:
-    Type: String
+    Type: CommaDelimitedList
     Description: a comma separated list of alphanumeric strings
-    Default: 'user1,user2,user3'
   
   IAMUserPassword:
     Type: String
@@ -21,7 +20,7 @@ Parameters:
 Resources:
   'Fn::ForEach::CreateIAMUsers':
     - UserName
-    - !Split [",", !Ref IAMUserNames]
+    - !Ref IAMUserNames
     - '${UserName}':
         Type: AWS::IAM::User
         Properties:
