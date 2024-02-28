@@ -1,4 +1,4 @@
-name: 'delete AWS resources'
+name: 'delete aws resources'
 
 on:
   workflow_dispatch:
@@ -9,8 +9,9 @@ on:
         required: true
 
 jobs:
-  log-the-inputs:
+  delete-aws-infrastructure:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
     - run: |
         aws cloudformation delete-stack \
@@ -19,4 +20,3 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: us-east-1
