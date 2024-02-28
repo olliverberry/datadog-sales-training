@@ -45,7 +45,7 @@ jobs:
           --region us-east-1 \
           --template-body=file://./infrastructure/cloudformation/template.yaml \
           --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM CAPABILITY_IAM \
-          --parameters ParameterKey=IAMUserPassword,ParameterValue=${{ secrets.IAM_USER_PASSWORD }} \
+          --parameters ParameterKey=IAMUserPassword,ParameterValue="${{ secrets.IAM_USER_PASSWORD }}" \
           ParameterKey=IAMUserNames,ParameterValue="${{ steps.create-iam-users-string.outputs.iam-users }}"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
