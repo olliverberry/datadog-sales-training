@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::LanguageExtensions'
 Description: 'CloudFormation template for creating the following resources for sales training:
   1. A variable number of IAM users in an AWS account
-  2. An EC2 instance running t2.micro
+  2. A t2.micro EC2 instance
   3. An ECS Cluster with 1 service running in it'
 
 Parameters:
