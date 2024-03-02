@@ -47,7 +47,7 @@ jobs:
         NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
     - id: get-ami-id
       run: |
-        $IMAGE_ID = $(aws ec2 describe-images \
+        IMAGE_ID = $(aws ec2 describe-images \
           --owners amazon \
           --filters Name=name,Values="al2023-ami-2023.3.20240219.0-kernel-6.1-x86_64" \
           --region ${{ vars.AWS_REGION }} | jq '.Images[0]?.ImageId')
