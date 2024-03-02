@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to create AWS Stack in'
+        description: 'the Github environment to create the AWS stack in'
         type: environment
         required: true
       numberOfIamUsersToCreate:
@@ -25,28 +25,46 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - id: create-iam-users-string
+      shell: pwsh
+      working-directory: ./aws-integration
       run: |
-        IAM_USERS=""
-        for ((i=1; i<=$NUM_USERS; i++))
-        do
-            if [ $i -eq $NUM_USERS ]
-            then
-                IAM_USERS+="user${i}"
-            else
-                IAM_USERS+="user${i}\\,"
-            fi
-        done
-        echo "iam-users=$IAM_USERS" >> "$GITHUB_OUTPUT"
+        $NumUsers = ""
+        if ((-not [int]::TryParse("$env:NUM_USERS", [ref]$NumUsers)) -or $NumUsers -le 0)
+        {
+            Write-Error -Message "invalid number of users to create. supply a non-zero positive integer"
+            exit 1
+        }
+        
+        $Users = 1 .. $env:NUM_USERS
+        for ($i = 0; $i -lt $Users.Count; $i++)
+        {
+            $Users[$i] = "user$($i + 1)"
+        }
+        
+        $IamUsers = [string]::Join("\\,", $Users)
+        Write-Output "iam-users=$IamUsers" >> "$env:GITHUB_OUTPUT"
       env:
         NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
+    - id: get-ami-id
+      run: |
+        $IMAGE_ID = $(aws ec2 describe-images \
+          --owners amazon \
+          --filters Name=description,Values="Amazon Linux 2023 AMI 2023.3.20240219.0 x86_64 HVM kernel-6.1" \
+          --region ${{ vars.AWS_REGION }} | jq '.Images[0]?.ImageId')
+          echo "ami-id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+               
     - run: |
         aws cloudformation create-stack \
           --stack-name datadog-sales-training-setup \
-          --region us-east-1 \
+          --region "${{ vars.AWS_REGION }}" \
           --template-body=file://./infrastructure/cloudformation/template.yaml \
           --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM CAPABILITY_IAM \
           --parameters ParameterKey=IAMUserPassword,ParameterValue="${{ secrets.IAM_USER_PASSWORD }}" \
-          ParameterKey=IAMUserNames,ParameterValue="${{ steps.create-iam-users-string.outputs.iam-users }}"
+          ParameterKey=IAMUserNames,ParameterValue="${{ steps.create-iam-users-string.outputs.iam-users }}" \
+          ParameterKey=AmiId,ParameterValue="${{ steps.get-ami-id.outputs.ami-id}}"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

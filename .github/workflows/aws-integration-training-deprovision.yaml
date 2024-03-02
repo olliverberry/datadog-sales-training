@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to delete the AWS Stack in'
+        description: 'the Github environment to delete the AWS Stack in'
         type: environment
         required: true
 
@@ -16,7 +16,7 @@ jobs:
     - run: |
         aws cloudformation delete-stack \
           --stack-name datadog-sales-training-setup \
-          --region us-east-1
+          --region ${{ vars.awsRegion }}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
