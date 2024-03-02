@@ -49,7 +49,7 @@ jobs:
       run: |
         $IMAGE_ID = $(aws ec2 describe-images \
           --owners amazon \
-          --filters Name=description,Values="Amazon Linux 2023 AMI 2023.3.20240219.0 x86_64 HVM kernel-6.1" \
+          --filters Name=name,Values="al2023-ami-2023.3.20240219.0-kernel-6.1-x86_64" \
           --region ${{ vars.AWS_REGION }} | jq '.Images[0]?.ImageId')
           echo "ami-id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
       env:
