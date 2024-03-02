@@ -1,5 +1,4 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:280540947342:task-definition/datadog-sales-training-log-generation:1",
     "containerDefinitions": [
         {
             "name": "log-generation",
@@ -18,8 +17,6 @@
         }
     ],
     "family": "datadog-sales-training-log-generation",
-    "taskRoleArn": "arn:aws:iam::280540947342:role/ecsTaskExecutionRole",
-    "executionRoleArn": "arn:aws:iam::280540947342:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
     "revision": 1,
     "status": "ACTIVE",
