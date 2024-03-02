@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'the Github environment to create the AWS stack in'
+        description: 'the Github Environment that specifies where to create the AWS stack'
         type: environment
         required: true
       numberOfIamUsersToCreate:
@@ -36,13 +36,7 @@ jobs:
             exit 1
         }
         
-        $Users = 1 .. $env:NUM_USERS
-        for ($i = 0; $i -lt $Users.Count; $i++)
-        {
-            $Users[$i] = "user$($i + 1)"
-        }
-        
-        $IamUsers = [string]::Join("\\,", $Users)
+        $IamUsers = 1 .. $NumUsers | ForEach-Object -Process { "user$_" } | Join-String -Property $_ -Separator "\\,"
         Write-Output "iam-users=$IamUsers" >> "$env:GITHUB_OUTPUT"
       env:
         NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
