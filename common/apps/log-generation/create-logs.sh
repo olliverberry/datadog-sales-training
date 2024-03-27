@@ -1,7 +1,9 @@
-#!/bin/bash
+SLEEP="$1"
+if [[ ! "$SLEEP" =~ ^[0-9]+$ ]]; then
+    SLEEP=60
+fi
 
 INDEX=0
-ITERATIONS=0
 LOG_LEVELS=("INFO" "DEBUG" "TRACE" "WARN" "ERROR")
 MESSAGES=(
     "Requesting starting at path: /api/dogs."
@@ -21,7 +23,6 @@ do
     if [ "$INDEX" -eq 5 ]; then
         INDEX=0
     fi
-    sleep 5
+    sleep $SLEEP
 
-    ((ITERATIONS++))
 done
