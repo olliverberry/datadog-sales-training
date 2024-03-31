@@ -1,7 +1,6 @@
 #!/bin/bash
 
 INDEX=0
-ITERATIONS=0
 LOG_LEVELS=("INFO" "DEBUG" "TRACE" "WARN" "ERROR")
 MESSAGES=(
     "Requesting starting at path: /api/dogs."
@@ -21,7 +20,5 @@ do
     if [ "$INDEX" -eq 5 ]; then
         INDEX=0
     fi
-    sleep 5
-
-    ((ITERATIONS++))
+    sleep 1
 done

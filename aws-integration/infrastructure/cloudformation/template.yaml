@@ -269,7 +269,7 @@ Resources:
           LogConfiguration:
             LogDriver: awsfirelens
         - Essential: true
-          Image: 'smehrens/custom-fluentbit-forwarder'
+          Image: 'smehrens/custom-fluentbit-forwarder:0.0.1'
           Name: log-forwarder
           FirelensConfiguration:
             Type: fluentbit
@@ -277,13 +277,6 @@ Resources:
               config-file-type: file
               config-file-value: /logDestinations.conf
               enable-ecs-log-metadata: true
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: !Ref LogGroupName
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-create-group: true
-              awslogs-stream-prefix: log-forwarder
           Environment:
             - Name: REGION
               Value: !Ref 'AWS::Region'

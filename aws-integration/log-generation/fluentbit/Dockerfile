@@ -1,2 +1,2 @@
-FROM amazon/aws-for-fluent-bit:stable
+FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:stable
 ADD logDestinations.conf /logDestinations.conf
