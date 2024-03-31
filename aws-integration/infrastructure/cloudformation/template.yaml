@@ -248,14 +248,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
-                  - 'ecr:GetAuthorizationToken'
-                  - 'ecr:BatchCheckLayerAvailability'
-                  - 'ecr:GetDownloadUrlForLayer'
-                  - 'ecr:BatchGetImage'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                  - 's3:PutObject'
+                Action: '*'
                 Resource: '*'
           
 
@@ -269,7 +262,7 @@ Resources:
           LogConfiguration:
             LogDriver: awsfirelens
         - Essential: true
-          Image: 'smehrens/custom-fluentbit-forwarder:0.0.2'
+          Image: 'smehrens/custom-fluentbit-forwarder:0.0.3'
           Name: log-forwarder
           FirelensConfiguration:
             Type: fluentbit
@@ -280,8 +273,6 @@ Resources:
           Environment:
             - Name: REGION
               Value: !Ref 'AWS::Region'
-            - Name: MATCH
-              Value: log-generation
             - Name: LOG_GROUP_NAME
               Value: !Ref LogGroupName
             - Name: LOG_STREAM_PREFIX
