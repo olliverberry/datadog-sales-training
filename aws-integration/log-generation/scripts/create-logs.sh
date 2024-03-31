@@ -1,24 +1,30 @@
 #!/bin/bash
 
-INDEX=0
-LOG_LEVELS=("INFO" "DEBUG" "TRACE" "WARN" "ERROR")
 MESSAGES=(
-    "Requesting starting at path: /api/dogs."
-    "Request finished at path: /api/dogs. time: 50ms."
-    "Executing action at Api.Controllers.GetDogs."
-    "Unable to find dog with id: 1."
-    "Unable to save dog with id: 1 to database. Exception: duplicate key exception."
+    "[INFO] | Requesting starting at path: GET /api/dogs."
+    "[DEBUG] | Request finished at path: GET /api/dogs. time: 50ms."
+    "[TRACE] | Executing action at Api.Controllers.GetDogs."
+    "[INFO] | Requesting starting at path: GET /api/dogs/{id}."
+    "[DEBUG] | Request finished at path: GET /api/dogs/{id}. time: 50ms."
+    "[TRACE] | Executing action at Api.Controllers.GetDogById."
+    "[WARN] | Unable to find dog with id: 1."
+    "[INFO] | Requesting starting at path: DELETE /api/dogs/{id}."
+    "[DEBUG] | Request finished at path: DELETE /api/dogs/{id}. time: 50ms."
+    "[TRACE] | Executing action at Api.Controllers.DeleteDogById."
+    "[DEBUG] | Successfully delete dog with id: 1 from the database."
+    "[INFO] | Requesting starting at path: POST /api/dogs/{id}."
+    "[DEBUG] | Request finished at path: POST /api/dogs/{id}. time: 50ms."
+    "[TRACE] | Executing action at Api.Controllers.CreateDog."
+    "[ERROR] | Unexpected error occurred while create dog with id: 10. Exception: duplication key exception"
 )
 
-echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") | [${LOG_LEVELS[INDEX]}] | starting log generator." >> logs.txt
 while $true;
 do
-    LOG_MESSAGE="$(date -u +"%Y-%m-%dT%H:%M:%SZ") | [${LOG_LEVELS[INDEX]}] | ${MESSAGES[INDEX]}"
-    echo $LOG_MESSAGE
-    ((INDEX++))
-
-    if [ "$INDEX" -eq 5 ]; then
-        INDEX=0
-    fi
+    INDEX=0
+    for MESSAGE in "${MESSAGES[@]}"; do
+        LOG_MESSAGE="$(date -u +"%Y-%m-%dT%H:%M:%SZ") | $MESSAGE"
+        echo $LOG_MESSAGE
+        ((INDEX++))
+    done
     sleep 1
 done
