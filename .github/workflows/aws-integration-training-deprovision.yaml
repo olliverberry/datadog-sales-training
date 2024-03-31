@@ -24,7 +24,8 @@ jobs:
 
     - name: Cleanup S3 Buckets
       run: |
-        BUCKETS=$(aws s3api list-buckets --query "Buckets[].Name" --output text)
+        echo "Getting s3 buckets"
+        BUCKETS=$(aws s3api list-buckets --query "Buckets[].Name" --output text --debug)
         for BUCKET in $BUCKETS; do
           echo "Emptying bucket $BUCKET"
           aws s3 rm s3://$BUCKET --recursive
@@ -35,7 +36,7 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        
+
     - name: Cleanup CloudFormation Templates
       run: |
         REGIONS=$(aws ec2 describe-regions --query "Regions[*].RegionName" --output text)

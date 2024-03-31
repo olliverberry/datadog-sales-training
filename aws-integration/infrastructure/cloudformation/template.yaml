@@ -252,6 +252,7 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                   - 's3:PutObject'
+                  - 'firehose:PutRecordBatch'
                 Resource: '*'
           
 
@@ -262,6 +263,8 @@ Resources:
         - Essential: true
           Image: 'smehrens/log-generation'
           Name: log-generation-service
+          LogConfiguration:
+            LogDriver: awsfirelens
         - Essential: true
           Image: 'smehrens/custom-fluentbit-forwarder'
           Name: log-forwarder-service
@@ -270,6 +273,7 @@ Resources:
             Options:
               config-file-type: file
               config-file-value: /logDestinations.conf
+              enable-ecs-log-metadata: true
           Environment:
             - Name: REGION
               Value: !Ref 'AWS::Region'
