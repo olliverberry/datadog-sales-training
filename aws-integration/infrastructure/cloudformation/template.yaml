@@ -252,7 +252,6 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                   - 's3:PutObject'
-                  - 'firehose:PutRecordBatch'
                 Resource: '*'
           
 
@@ -262,7 +261,7 @@ Resources:
       ContainerDefinitions:
         - Essential: true
           Image: 'smehrens/log-generation'
-          Name: log-generation-service
+          Name: log-generation
           LogConfiguration:
             LogDriver: awsfirelens
         - Essential: true
@@ -278,7 +277,7 @@ Resources:
             - Name: REGION
               Value: !Ref 'AWS::Region'
             - Name: MATCH
-              Value: smehrens/log-generation*
+              Value: log-generation*
             - Name: LOG_GROUP_NAME
               Value: !Ref LogGroupName
             - Name: LOG_STREAM_PREFIX

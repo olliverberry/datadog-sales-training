@@ -22,10 +22,12 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-    - name: Cleanup S3 Buckets
+    - name: Cleanup Orphaned S3 Buckets
       run: |
         echo "Getting s3 buckets"
-        BUCKETS=$(aws s3api list-buckets --query "Buckets[].Name" --output text --debug)
+        BUCKETS=$(aws s3api list-buckets \
+          --query "Buckets[].Name" \
+          --output text)
         for BUCKET in $BUCKETS; do
           echo "Emptying bucket $BUCKET"
           aws s3 rm s3://$BUCKET --recursive
@@ -38,9 +40,11 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
 
-    - name: Cleanup CloudFormation Templates
+    - name: Cleanup Orphaned CloudFormation Templates
       run: |
-        REGIONS=$(aws ec2 describe-regions --query "Regions[*].RegionName" --output text)
+        REGIONS=$(aws ec2 describe-regions \
+          --query "Regions[*].RegionName" \
+          --output text)
         for REGION in $REGIONS; do
           ACTIVE_STACKS=$(aws cloudformation list-stacks \
             --stack-status-filter CREATE_COMPLETE \
@@ -51,6 +55,26 @@ jobs:
           for ACTIVE_STACK in $ACTIVE_STACKS; do
             aws cloudformation delete-stack \
               --stack-name $ACTIVE_STACK \
+              --region $REGION
+          done
+        done
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+
+    - name: Cleanup orphaned Cloudwatch Log Groups
+      run: |
+        REGIONS=$(aws ec2 describe-regions --query "Regions[*].RegionName" --output text)
+        for REGION in $REGIONS; do
+          LOG_GROUPS=$(aws logs describe-log-groups \
+            --query "logGroups[*].logGroupName" \
+            --output text \
+            --region $REGION)
+          
+          for LOG_GROUP in $LOG_GROUPS; do
+            aws logs delete-log-group \
+              --log-group-name $LOG_GROUP \
               --region $REGION
           done
         done
