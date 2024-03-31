@@ -20,6 +20,21 @@ Parameters:
   AmiId:
     Type: String
     Description: the image id of the AMI to create
+  
+  LogGroupName:
+    Type: String
+    Description: The name of the Cloudwatch log group
+    Default: /datadog/aws-integration-sales-training
+
+  LogStreamPrefix:
+    Type: String
+    Description: The name of the prefix for the Cloudwatch log group
+    Default: log-generation
+  
+  BucketName:
+    Type: String
+    Description: The name of the S3 bucket to store logs
+    Default: datadog-sales-training-s3-bucket
 
 Resources:
   'Fn::ForEach::CreateIAMUsers':
@@ -179,11 +194,22 @@ Resources:
         - Key: company
           Value: datadog
 
+  SalesTrainingS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref BucketName
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+
   SalesTrainingLogGroup: 
     Type: AWS::Logs::LogGroup
     Properties: 
       RetentionInDays: 1
-      LogGroupName: '/datadog/aws-integration-sales-training'
+      LogGroupName: !Ref LogGroupName
       Tags:
         - Key: env
           Value: development
@@ -200,21 +226,63 @@ Resources:
         - Key: company
           Value: datadog
 
+  SalesTrainingECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CustomECSTaskExecutionRolePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                  - 's3:PutObject'
+                Resource: '*'
+          
+
   SalesTrainingECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       ContainerDefinitions:
         - Essential: true
           Image: 'smehrens/log-generation'
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: /datadog/aws-integration-sales-training
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: log-generation
           Name: log-generation-service
+        - Essential: true
+          Image: 'smehrens/custom-fluentbit-forwarder'
+          Name: log-forwarder-service
+          FirelensConfiguration:
+            Type: fluentbit
+            Options:
+              config-file-type: file
+              config-file-value: /logDestinations.conf
+          Environment:
+            - Name: REGION
+              Value: !Ref 'AWS::Region'
+            - Name: MATCH
+              Value: smehrens/log-generation*
+            - Name: LOG_GROUP_NAME
+              Value: !Ref LogGroupName
+            - Name: LOG_STREAM_PREFIX
+              Value: !Ref LogStreamPrefix
+            - Name: BUCKET_NAME
+              Value: !Ref BucketName
       Cpu: 256
-      ExecutionRoleArn: !Join [ '', [ 'arn:aws:iam::', !Ref AWS::AccountId,  ':role/ecsTaskExecutionRole'] ]
+      ExecutionRoleArn: !Ref SalesTrainingECSTaskExecutionRole
       Family: datadog-sales-training-log-generation
       Memory: 512
       NetworkMode: awsvpc
@@ -223,6 +291,11 @@ Resources:
       RuntimePlatform:
         OperatingSystemFamily: LINUX
         CpuArchitecture: X86_64
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
 
   SalesTrainingECSService:
     Type: 'AWS::ECS::Service'

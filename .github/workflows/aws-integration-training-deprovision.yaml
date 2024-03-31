@@ -21,3 +21,37 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - name: Cleanup S3 Buckets
+      run: |
+        BUCKETS=$(aws s3api list-buckets --query "Buckets[].Name" --output text)
+        for BUCKET in $BUCKETS; do
+          echo "Emptying bucket $BUCKET"
+          aws s3 rm s3://$BUCKET --recursive
+        
+          echo "Deleting bucket $BUCKET"
+          aws s3api delete-bucket --bucket $BUCKET
+        done
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+    - name: Cleanup CloudFormation Templates
+      run: |
+        REGIONS=$(aws ec2 describe-regions --query "Regions[*].RegionName" --output text)
+        for REGION in $REGIONS; do
+          ACTIVE_STACKS=$(aws cloudformation list-stacks \
+            --stack-status-filter CREATE_COMPLETE \
+            --region $REGION \
+            --query "StackSummaries[*].StackName" \
+            --output text)
+          
+          for ACTIVE_STACK in $ACTIVE_STACKS; do
+            aws cloudformation delete-stack \
+              --stack-name $ACTIVE_STACK \
+              --region $REGION
+          done
+        done
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
