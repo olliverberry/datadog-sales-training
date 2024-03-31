@@ -54,6 +54,10 @@ Resources:
               - Effect: Allow
                 Action: '*'
                 Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion:
+                      - !Ref 'AWS::Region'
 
   SalesTrainingVPC:
     Type: AWS::EC2::VPC
@@ -266,7 +270,7 @@ Resources:
             LogDriver: awsfirelens
         - Essential: true
           Image: 'smehrens/custom-fluentbit-forwarder'
-          Name: log-forwarder-service
+          Name: log-forwarder
           FirelensConfiguration:
             Type: fluentbit
             Options:
@@ -277,7 +281,7 @@ Resources:
             - Name: REGION
               Value: !Ref 'AWS::Region'
             - Name: MATCH
-              Value: log-generation*
+              Value: log-generation
             - Name: LOG_GROUP_NAME
               Value: !Ref LogGroupName
             - Name: LOG_STREAM_PREFIX
