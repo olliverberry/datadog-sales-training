@@ -270,7 +270,7 @@ Resources:
           LogConfiguration:
             LogDriver: awsfirelens
         - Essential: true
-          Image: 'smehrens/custom-fluentbit-forwarder:0.0.6'
+          Image: 'smehrens/custom-fluentbit-forwarder:0.0.7'
           Name: log-forwarder
           LogConfiguration:
             LogDriver: awslogs
