@@ -24,7 +24,7 @@ Parameters:
   LogGroupName:
     Type: String
     Description: The name of the Cloudwatch log group
-    Default: /datadog/aws-integration-sales-training
+    Default: /ecs/datadog/sales-training/aws-integration
 
   LogStreamPrefix:
     Type: String
@@ -248,7 +248,15 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: '*'
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogGroup'
+                  - 's3:PutObject'
                 Resource: '*'
           
 
@@ -257,13 +265,19 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Essential: true
-          Image: 'smehrens/log-generation'
-          Name: log-generation
+          Image: 'smehrens/log-generation:0.0.1'
+          Name: log-generator
           LogConfiguration:
             LogDriver: awsfirelens
         - Essential: true
-          Image: 'smehrens/custom-fluentbit-forwarder:0.0.3'
+          Image: 'smehrens/custom-fluentbit-forwarder:0.0.6'
           Name: log-forwarder
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroupName
+              awslogs-stream-prefix: log-forwarder
+              awslogs-region: !Ref 'AWS::Region'
           FirelensConfiguration:
             Type: fluentbit
             Options:
@@ -279,8 +293,11 @@ Resources:
               Value: !Ref LogStreamPrefix
             - Name: BUCKET_NAME
               Value: !Ref BucketName
+            - Name: MATCH
+              Value: log-generator*
       Cpu: 256
       ExecutionRoleArn: !Ref SalesTrainingECSTaskExecutionRole
+      TaskRoleArn: !Ref SalesTrainingECSTaskExecutionRole
       Family: datadog-sales-training-log-generation
       Memory: 512
       NetworkMode: awsvpc
