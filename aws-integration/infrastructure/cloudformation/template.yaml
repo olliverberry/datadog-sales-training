@@ -291,7 +291,7 @@ Resources:
               Value: !Ref LogGroupName
             - Name: LOG_STREAM_PREFIX
               Value: !Ref LogStreamPrefix
-            - Name: BUCKET_NAME
+            - Name: BUCKET
               Value: !Ref BucketName
             - Name: MATCH
               Value: log-generator*
