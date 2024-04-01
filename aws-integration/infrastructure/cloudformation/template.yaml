@@ -29,7 +29,7 @@ Parameters:
   LogStreamPrefix:
     Type: String
     Description: The name of the prefix for the Cloudwatch log group
-    Default: log-generation
+    Default: /log-generation
   
   BucketName:
     Type: String
@@ -72,6 +72,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingInternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -83,6 +85,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingInternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -106,6 +110,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingRouteTable:
     Type: AWS::EC2::RouteTable
@@ -118,6 +124,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingDefaultPublicRoute:
     Type: AWS::EC2::Route
@@ -151,6 +159,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingOutboundSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -168,6 +178,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingKeyPair:
     Type: 'AWS::EC2::KeyPair'
@@ -197,6 +209,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingS3Bucket:
     Type: AWS::S3::Bucket
@@ -208,6 +222,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingLogGroup: 
     Type: AWS::Logs::LogGroup
@@ -219,6 +235,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingECSCluster:
     Type: 'AWS::ECS::Cluster'
@@ -229,6 +247,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingECSTaskExecutionRole:
     Type: AWS::IAM::Role
@@ -265,12 +285,12 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Essential: true
-          Image: 'smehrens/log-generation:0.0.1'
+          Image: 'smehrens/log-generator:1.0.0'
           Name: log-generator
           LogConfiguration:
             LogDriver: awsfirelens
         - Essential: true
-          Image: 'smehrens/custom-fluentbit-forwarder:0.0.7'
+          Image: 'smehrens/custom-fluentbit-forwarder:1.0.0'
           Name: log-forwarder
           LogConfiguration:
             LogDriver: awslogs
@@ -311,6 +331,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingECSService:
     Type: 'AWS::ECS::Service'
@@ -332,3 +354,5 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training

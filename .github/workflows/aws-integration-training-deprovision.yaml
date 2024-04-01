@@ -63,7 +63,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
 
-    - name: Cleanup orphaned Cloudwatch Log Groups
+    - name: Cleanup Orphaned Cloudwatch Log Groups
       run: |
         REGIONS=$(aws ec2 describe-regions --query "Regions[*].RegionName" --output text)
         for REGION in $REGIONS; do
