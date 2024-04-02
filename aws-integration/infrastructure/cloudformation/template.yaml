@@ -292,12 +292,6 @@ Resources:
         - Essential: true
           Image: 'smehrens/custom-fluentbit-forwarder:1.0.0'
           Name: log-forwarder
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: !Ref LogGroupName
-              awslogs-stream-prefix: log-forwarder
-              awslogs-region: !Ref 'AWS::Region'
           FirelensConfiguration:
             Type: fluentbit
             Options:
