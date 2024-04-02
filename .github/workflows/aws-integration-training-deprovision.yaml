@@ -21,3 +21,64 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - name: Cleanup Orphaned S3 Buckets
+      run: |
+        echo "Getting s3 buckets"
+        BUCKETS=$(aws s3api list-buckets \
+          --query "Buckets[].Name" \
+          --output text)
+        for BUCKET in $BUCKETS; do
+          echo "Emptying bucket $BUCKET"
+          aws s3 rm s3://$BUCKET --recursive
+        
+          echo "Deleting bucket $BUCKET"
+          aws s3api delete-bucket --bucket $BUCKET
+        done
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+
+    - name: Cleanup Orphaned CloudFormation Templates
+      run: |
+        REGIONS=$(aws ec2 describe-regions \
+          --query "Regions[*].RegionName" \
+          --output text)
+        for REGION in $REGIONS; do
+          ACTIVE_STACKS=$(aws cloudformation list-stacks \
+            --stack-status-filter CREATE_COMPLETE \
+            --region $REGION \
+            --query "StackSummaries[*].StackName" \
+            --output text)
+          
+          for ACTIVE_STACK in $ACTIVE_STACKS; do
+            aws cloudformation delete-stack \
+              --stack-name $ACTIVE_STACK \
+              --region $REGION
+          done
+        done
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+
+    - name: Cleanup Orphaned Cloudwatch Log Groups
+      run: |
+        REGIONS=$(aws ec2 describe-regions --query "Regions[*].RegionName" --output text)
+        for REGION in $REGIONS; do
+          LOG_GROUPS=$(aws logs describe-log-groups \
+            --query "logGroups[*].logGroupName" \
+            --output text \
+            --region $REGION)
+          
+          for LOG_GROUP in $LOG_GROUPS; do
+            aws logs delete-log-group \
+              --log-group-name $LOG_GROUP \
+              --region $REGION
+          done
+        done
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
