@@ -212,11 +212,36 @@ Resources:
         - Key: business_unit
           Value: sales-training
 
+  SalesTrainingSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: datadog-sales-training-topic
+
+  SalesTrainingSNSTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Sid: AllowServices
+            Effect: Allow
+            Principal:
+              - s3.amazonaws.com
+            Action:
+              - "SNS:ListSubscriptionsByTopic"
+              - "SNS:GetTopicAttributes"
+              - "SNS:Publish"
+      Topics: 
+        - !Ref SalesTrainingSNSTopic
+
   SalesTrainingS3Bucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
       BucketName: !Ref BucketName
+      NotificationConfiguration:
+       TopicConfigurations:
+        - Event: s3:ObjectCreated:*
+          Topic: !Ref SalesTrainingSNSTopic
       Tags:
         - Key: env
           Value: development
@@ -224,7 +249,7 @@ Resources:
           Value: datadog
         - Key: business_unit
           Value: sales-training
-
+      
   SalesTrainingLogGroup: 
     Type: AWS::Logs::LogGroup
     Properties: 
@@ -278,7 +303,6 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 's3:PutObject'
                 Resource: '*'
-          
 
   SalesTrainingECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
