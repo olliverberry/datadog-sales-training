@@ -221,15 +221,16 @@ Resources:
     Type: AWS::SNS::TopicPolicy
     Properties:
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
           - Sid: AllowServices
             Effect: Allow
             Principal:
               - s3.amazonaws.com
             Action:
-              - "SNS:ListSubscriptionsByTopic"
-              - "SNS:GetTopicAttributes"
-              - "SNS:Publish"
+              - SNS:ListSubscriptionsByTopic
+              - SNS:GetTopicAttributes
+              - SNS:Publish
       Topics: 
         - !Ref SalesTrainingSNSTopic
 
