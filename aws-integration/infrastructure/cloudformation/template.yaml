@@ -224,14 +224,10 @@ Resources:
         Version: '2012-10-17'
         Id: SalesTrainingSNSTopicPolicy
         Statement:
-          - Sid: AllowServices
-            Effect: Allow
+          - Effect: "Allow"
             Principal:
-              - s3.amazonaws.com
-            Action:
-              - SNS:ListSubscriptionsByTopic
-              - SNS:GetTopicAttributes
-              - SNS:Publish
+              Service: "s3.amazonaws.com"
+            Action: "sns:Publish"
             Resource: !Ref SalesTrainingSNSTopic
       Topics: 
         - !Ref SalesTrainingSNSTopic
