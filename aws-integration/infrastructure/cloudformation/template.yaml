@@ -222,6 +222,7 @@ Resources:
     Properties:
       PolicyDocument:
         Version: '2012-10-17'
+        Id: SalesTrainingSNSTopicPolicy
         Statement:
           - Sid: AllowServices
             Effect: Allow
@@ -231,6 +232,7 @@ Resources:
               - SNS:ListSubscriptionsByTopic
               - SNS:GetTopicAttributes
               - SNS:Publish
+            Resource: !Ref SalesTrainingSNSTopic
       Topics: 
         - !Ref SalesTrainingSNSTopic
 
