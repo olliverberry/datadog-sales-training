@@ -24,6 +24,7 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
     - uses: actions/checkout@v3
+
     - id: create-iam-users-string
       name: Create IAM Users String
       shell: pwsh
@@ -40,13 +41,16 @@ jobs:
         Write-Output "iam-users=$IamUsers" >> "$env:GITHUB_OUTPUT"
       env:
         NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
+        
     - id: get-ami-id
       name: Get AMI Id
       run: |
         export IMAGE_ID=$(aws ec2 describe-images \
           --owners amazon \
           --filters Name=name,Values="al2023-ami-2023.3.20240219.0-kernel-6.1-x86_64" \
-          --region ${{ vars.AWS_REGION }} | jq '.Images[0]?.ImageId')
+          --query "Images[*].ImageId" \
+          --output text \
+          --region ${{ vars.AWS_REGION }})
         echo "ami-id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

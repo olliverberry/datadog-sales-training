@@ -20,6 +20,21 @@ Parameters:
   AmiId:
     Type: String
     Description: the image id of the AMI to create
+  
+  LogGroupName:
+    Type: String
+    Description: The name of the Cloudwatch log group
+    Default: /ecs/datadog/sales-training/aws-integration
+
+  LogStreamPrefix:
+    Type: String
+    Description: The name of the prefix for the Cloudwatch log group
+    Default: /log-generation
+  
+  BucketName:
+    Type: String
+    Description: The name of the S3 bucket to store logs
+    Default: datadog-sales-training-s3-bucket
 
 Resources:
   'Fn::ForEach::CreateIAMUsers':
@@ -39,6 +54,10 @@ Resources:
               - Effect: Allow
                 Action: '*'
                 Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion:
+                      - !Ref 'AWS::Region'
 
   SalesTrainingVPC:
     Type: AWS::EC2::VPC
@@ -53,6 +72,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingInternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -64,6 +85,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingInternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -87,6 +110,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingRouteTable:
     Type: AWS::EC2::RouteTable
@@ -99,6 +124,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingDefaultPublicRoute:
     Type: AWS::EC2::Route
@@ -132,6 +159,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingOutboundSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -149,6 +178,8 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingKeyPair:
     Type: 'AWS::EC2::KeyPair'
@@ -178,17 +209,58 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
-  SalesTrainingLogGroup: 
-    Type: AWS::Logs::LogGroup
-    Properties: 
-      RetentionInDays: 1
-      LogGroupName: '/datadog/aws-integration-sales-training'
+  SalesTrainingSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: datadog-sales-training-topic
+
+  SalesTrainingSNSTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: SalesTrainingSNSTopicPolicy
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "s3.amazonaws.com"
+            Action: "sns:Publish"
+            Resource: !Ref SalesTrainingSNSTopic
+      Topics: 
+        - !Ref SalesTrainingSNSTopic
+
+  SalesTrainingS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref BucketName
+      NotificationConfiguration:
+       TopicConfigurations:
+        - Event: s3:ObjectCreated:*
+          Topic: !Ref SalesTrainingSNSTopic
       Tags:
         - Key: env
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
+      
+  SalesTrainingLogGroup: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 1
+      LogGroupName: !Ref LogGroupName
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingECSCluster:
     Type: 'AWS::ECS::Cluster'
@@ -199,22 +271,70 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
+
+  SalesTrainingECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CustomECSTaskExecutionRolePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogGroup'
+                  - 's3:PutObject'
+                Resource: '*'
 
   SalesTrainingECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       ContainerDefinitions:
         - Essential: true
-          Image: 'smehrens/log-generation'
+          Image: 'smehrens/log-generator:1.0.0'
+          Name: log-generator
           LogConfiguration:
-            LogDriver: awslogs
+            LogDriver: awsfirelens
+        - Essential: true
+          Image: 'smehrens/custom-fluentbit-forwarder:1.0.0'
+          Name: log-forwarder
+          FirelensConfiguration:
+            Type: fluentbit
             Options:
-              awslogs-group: /datadog/aws-integration-sales-training
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: log-generation
-          Name: log-generation-service
+              config-file-type: file
+              config-file-value: /logDestinations.conf
+              enable-ecs-log-metadata: true
+          Environment:
+            - Name: REGION
+              Value: !Ref 'AWS::Region'
+            - Name: LOG_GROUP_NAME
+              Value: !Ref LogGroupName
+            - Name: LOG_STREAM_PREFIX
+              Value: !Ref LogStreamPrefix
+            - Name: BUCKET
+              Value: !Ref BucketName
+            - Name: MATCH
+              Value: log-generator*
       Cpu: 256
-      ExecutionRoleArn: !Join [ '', [ 'arn:aws:iam::', !Ref AWS::AccountId,  ':role/ecsTaskExecutionRole'] ]
+      ExecutionRoleArn: !Ref SalesTrainingECSTaskExecutionRole
+      TaskRoleArn: !Ref SalesTrainingECSTaskExecutionRole
       Family: datadog-sales-training-log-generation
       Memory: 512
       NetworkMode: awsvpc
@@ -223,6 +343,13 @@ Resources:
       RuntimePlatform:
         OperatingSystemFamily: LINUX
         CpuArchitecture: X86_64
+      Tags:
+        - Key: env
+          Value: development
+        - Key: company
+          Value: datadog
+        - Key: business_unit
+          Value: sales-training
 
   SalesTrainingECSService:
     Type: 'AWS::ECS::Service'
@@ -244,3 +371,5 @@ Resources:
           Value: development
         - Key: company
           Value: datadog
+        - Key: business_unit
+          Value: sales-training
