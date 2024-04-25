@@ -7,3 +7,10 @@ on:
         description: 'the Github Environment that specifies where to create the Azure resources.'
         type: environment
         required: true
+
+jobs:
+  create-azure-infrastructure:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+    - uses: actions/checkout@v3
