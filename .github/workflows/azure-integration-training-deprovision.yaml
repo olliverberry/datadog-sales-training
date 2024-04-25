@@ -1,0 +1,9 @@
+name: 'delete azure resources'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'the Github Environment that specifies where to create the Azure resources.'
+        type: environment
+        required: true
