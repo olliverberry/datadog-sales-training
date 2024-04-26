@@ -39,7 +39,7 @@ Parameters:
   EC2sString:
     Type: CommaDelimitedList
     Description: The number of EC2s to create
-    Default: "1"
+    Default: "-1"
 
 Resources:
   'Fn::ForEach::CreateIAMUsers':

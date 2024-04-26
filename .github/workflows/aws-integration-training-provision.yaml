@@ -59,7 +59,7 @@ jobs:
             exit 1
         }
         
-        $EC2S = 1 .. $NumEC2S | ForEach-Object -Process { "$_" } | Join-String -Property $_ -Separator "\\,"
+        $EC2S = 1 .. $NumEC2S | ForEach-Object -Process { "-$_" } | Join-String -Property $_ -Separator "\\,"
         Write-Output "ec2s=$EC2S" >> "$env:GITHUB_OUTPUT"
       env:
         NUM_EC2S: ${{ inputs.numberOfEC2InstancesToCreate }}
