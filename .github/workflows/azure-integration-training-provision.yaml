@@ -7,6 +7,11 @@ on:
         description: 'the Github Environment that specifies where to create the Azure resources.'
         type: environment
         required: true
+      numberOfAzureUsers:
+        description: 'the number of Azure users to create.'
+        type: number
+        required: false
+        default: 1
 
 jobs:
   create-azure-infrastructure:
@@ -14,3 +19,30 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v3
+
+      - name: Log in with Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+      
+      - name: Create Azure Users
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            if ([string]::IsNullOrEmpty(${{ secrets.PASSWORD }})) {
+              Write-Error "Password is null or empty. Please specify password and try again."
+              exit 1
+            }
+        
+            for ($i = 1; $i -le ${{ inputs.numberOfAzureUsers }}; $i++) {
+              $user = "user$i"
+              $password = ConvertTo-SecureString -AsPlainText -Force ${{ secrets.PASSWORD }}
+              $upn = "$user${{ vars.USER_PRINCIPAL_NAME }}"
+              New-AzADUser -DisplayName $user
+                -Password $password
+                -AccountEnabled $true
+                -MailNickname $user
+                -UserPrincipalName $upn
+            }
+          azPSVersion: 'latest'
