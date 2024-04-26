@@ -53,7 +53,7 @@ jobs:
       working-directory: ./aws-integration
       run: |
         $NumEC2S = ""
-        if ((-not [int]::TryParse("$env:NUM_USERS", [ref]$NumEC2S)) -or $NumEC2S -le 0)
+        if ((-not [int]::TryParse("$env:NUM_EC2S", [ref]$NumEC2S)) -or $NumEC2S -le 0)
         {
             Write-Error -Message "invalid number of ec2 instances to create. supply a non-zero positive integer"
             exit 1
