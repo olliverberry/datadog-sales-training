@@ -1,0 +1,16 @@
+name: 'delete azure resources'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'the Github environment that specifies where to delete the Azure resources.'
+        type: environment
+        required: true
+
+jobs:
+  delete-azure-infrastructure:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+    - uses: actions/checkout@v3
