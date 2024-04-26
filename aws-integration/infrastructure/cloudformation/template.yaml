@@ -37,7 +37,7 @@ Parameters:
     Default: datadog-sales-training-s3-bucket
 
   EC2sString:
-    Type: Number
+    Type: CommaDelimitedList
     Description: The number of EC2s to create
     Default: "1"
 
