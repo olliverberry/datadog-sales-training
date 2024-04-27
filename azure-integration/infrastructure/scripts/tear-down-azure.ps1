@@ -5,8 +5,9 @@ if (-not $managementGroup) {
     exit 0
 }
 
+Write-Host "getting subscriptions for management group '$($managementGroup.Name)'."
 $subscriptions = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name
-Write-Host "Got '$($subscriptions.Count)' subscriptions."
+Write-Host "got '$($subscriptions.Count)' subscriptions."
 if ($subscriptions.Count -eq 0) {
     exit 0
 }
