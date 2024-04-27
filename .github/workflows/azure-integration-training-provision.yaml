@@ -26,7 +26,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
       
-      - name: Create Azure Users
+      - name: Setup Azure Environment
         uses: azure/powershell@v2
         with:
           inlineScript: |
@@ -34,15 +34,9 @@ jobs:
               Write-Error "Password is null or empty. Please specify a password and try again."
               exit 1
             }
-        
-            for ($i = 1; $i -le ${{ inputs.numberOfAzureUsers }}; $i++) {
-              $user = "user$i"
-              $password = ConvertTo-SecureString -AsPlainText -Force "${{ secrets.PASSWORD }}"
-              $upn = "$user@${{ vars.USER_PRINCIPAL_NAME }}"
-              New-AzADUser -DisplayName $user `
-                -Password $password `
-                -AccountEnabled $true `
-                -MailNickname $user `
-                -UserPrincipalName $upn
-            }
+
+            ./azure-integration/infrastructure/scripts/setup-azure.ps1 -NumberOfUsers "${{ inputs.numberOfAzureUsers }}" `
+              -BillingString "${{ secrets.BILLING_STRING }}" `
+              -Password $(ConvertTo-SecureString -AsPlainText -Force "${{ secrets.PASSWORD }}") `
+              -DomainName "${{ vars.DOMAIN_NAME }}"
           azPSVersion: 'latest'

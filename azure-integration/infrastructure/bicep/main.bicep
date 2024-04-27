@@ -1,3 +1,4 @@
+
 @description('The name of your Virtual Machine.')
 param vmName string = 'simpleLinuxVM'
 
