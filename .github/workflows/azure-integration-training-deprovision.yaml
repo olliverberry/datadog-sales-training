@@ -21,6 +21,11 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
       
+      - name: Install Az Module
+        shell: pwsh
+        run: |
+          Install-Module -Name Az -Repository PSGallery -Force
+      
       - name: Teardown Azure Environment
         shell: pwsh
         working-directory: ./azure-integration/infrastructure/scripts
