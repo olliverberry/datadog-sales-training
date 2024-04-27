@@ -7,6 +7,7 @@ if ($subscriptions.Count -eq 0) {
 }
 
 foreach ($subscription in $subscriptions) {
+    Write-Host "getting role assignments for subscription '$($subscription.Id)'."
     $roleAssignments = Get-AzRoleAssignment -Scope "/subscriptions/$($subscription.Id)"
     foreach ($roleAssignment in $roleAssignments) {
         Remove-AzADUser -ObjectId $roleAssignment.ObjectId
