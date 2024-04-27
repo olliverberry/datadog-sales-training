@@ -32,7 +32,8 @@ if ($subscriptions.Count -lt $NumberOfUsers) {
             -Workload "Production" `
             -ManagementGroupId $managementGroup.Id
 
-        Write-Host "created subscription with name '$($newSubscription.DisplayName)'."
+        Write-Host "created subscription with name '$($newSubscription.Name)'."
+        Start-Sleep -Seconds 15
     }
 }
 
@@ -45,10 +46,12 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
         -AccountEnabled $true `
         -MailNickname $user `
         -UserPrincipalName $upn
-    
-    $subscription = ($subscriptions | Where-Object { $_.DisplayName -like "*$user*" })[0]
+    Start-Sleep -Seconds 15
+
+    $subscription = ($subscriptions | Where-Object { $_.Name -like "*$user*" })[0]
     $ownerRole = Get-AzRoleDefinition -Name "Owner"
     New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole `
         -Scope "/subscriptions/$($subscription.Id)"
+    Start-Sleep -Seconds 15
 }
