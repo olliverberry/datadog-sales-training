@@ -30,6 +30,8 @@ jobs:
         uses: azure/powershell@v2
         with:
           inlineScript: |
+            $azModule = Get-InstalledModule -Name Az
+            Write-Host "Az version $($azModule.Version)"
             if ([string]::IsNullOrEmpty("${{ secrets.PASSWORD }}")) {
               Write-Error "Password is null or empty. Please specify a password and try again."
               exit 1
