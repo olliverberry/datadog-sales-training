@@ -17,11 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Log in with Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          enable-AzPSSession: true
+      - name: Login To Azure
+        shell: pwsh
+        run: |
+          $credentials = ConvertFrom-Json -InputObject ${{ secrets.AZURE_CREDENTIALS }}
+          $securePassword = $credentials.clientSecret | ConvertTo-SecureString -AsPlainText -Force
+          $pscredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $credentials.clientId, $securePassword
+          Connect-AzAccount -ServicePrincipal -Credential $pscredential -Tenant $credentials.tenantId
       
       - name: Teardown Azure Environment
         shell: pwsh
