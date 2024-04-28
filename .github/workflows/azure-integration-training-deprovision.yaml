@@ -12,8 +12,6 @@ jobs:
   delete-azure-infrastructure:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    container:
-      image: mcr.microsoft.com/azure-powershell:11.5.0-ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
