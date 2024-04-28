@@ -20,10 +20,9 @@ jobs:
       - name: Login To Azure
         shell: pwsh
         run: |
-          $credentials = ConvertFrom-Json -InputObject ${{ secrets.AZURE_CREDENTIALS }}
-          $securePassword = $credentials.clientSecret | ConvertTo-SecureString -AsPlainText -Force
-          $pscredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $credentials.clientId, $securePassword
-          Connect-AzAccount -ServicePrincipal -Credential $pscredential -Tenant $credentials.tenantId
+          $securePassword = "${{ secrets.SECRET }}" | ConvertTo-SecureString -AsPlainText -Force
+          $pscredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList ${{ secrets.APP_ID }}, $securePassword
+          Connect-AzAccount -ServicePrincipal -Credential $pscredential -Tenant ${{ secrets.TENANT_ID }}
       
       - name: Teardown Azure Environment
         shell: pwsh
