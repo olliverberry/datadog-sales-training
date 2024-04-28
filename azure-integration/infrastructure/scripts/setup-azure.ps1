@@ -9,7 +9,10 @@ param (
     [securestring] $Password,
 
     [Parameter(Mandatory=$true)]
-    [string] $DomainName
+    [string] $DomainName,
+
+    [Parameter(Mandatory=$true)]
+    [string] $OwnerId
 )
 
 $ManagementGroupName = "datadog-sales-training"
@@ -17,6 +20,17 @@ $managementGroup = Get-AzManagementGroup -GroupName $ManagementGroupName -ErrorA
 if (-not $managementGroup) {
     Write-Host "management group '$ManagementGroupName' does not exist. creating..."
     $managementGroup = New-AzManagementGroup -GroupName $ManagementGroupName -DisplayName 'Datadog Sales Training'
+}
+
+
+$ownerRole = Get-AzRoleDefinition -Name "Owner"
+$assignedRoles = Get-AzRoleAssignment -Scope $managementGroup.Id
+$ownerAssignedRole = $assignedRoles | Where-Object { $_.ObjectId -eq $OwnerId }
+if (-not $ownerAssignedRole) {
+    Write-Host "unable to find owner assigned role for management group. will assign."
+    New-AzRoleAssignment -ObjectId $OwnderId `
+        -RoleDefinitionId $ownerRole.Id `
+        -Scope $managementGroup.Id
 }
 
 $subscriptions = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name
@@ -48,10 +62,10 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
         -UserPrincipalName $upn
     Start-Sleep -Seconds 15
 
-    $subscription = ($subscriptions | Where-Object { $_.Name -like "*$user*" })[0]
+    $subscription = $subscriptions | Where-Object { $_.Name -like "*$user*" } | Select-Object -First 1
     $ownerRole = Get-AzRoleDefinition -Name "Owner"
     New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole `
-        -Scope "/subscriptions/$($subscription.Id)"
+        -Scope $subscription.Id
     Start-Sleep -Seconds 15
 }

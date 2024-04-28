@@ -14,7 +14,7 @@ if ($subscriptions.Count -eq 0) {
 
 foreach ($subscription in $subscriptions) {
     Write-Host "getting role assignments for subscription '$($subscription.Id)'."
-    $roleAssignments = Get-AzRoleAssignment -Scope "/subscriptions/$($subscription.Id)"
+    $roleAssignments = Get-AzRoleAssignment -Scope $subscription.Id
     foreach ($roleAssignment in $roleAssignments) {
         Remove-AzADUser -ObjectId $roleAssignment.ObjectId
         Start-Sleep -Seconds 15
