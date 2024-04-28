@@ -22,7 +22,8 @@ jobs:
           enable-AzPSSession: true
       
       - name: Teardown Azure Environment
-        shell: pwsh
-        working-directory: ./azure-integration/infrastructure/scripts
-        run: |
-          ./tear-down-azure.ps1
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            ./azure-integration/infrastructure/scripts/tear-down-azure.ps1
+          azPSVersion: 'latest'
