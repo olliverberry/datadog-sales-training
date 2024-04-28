@@ -46,12 +46,13 @@ if ($subscriptions.Count -lt $NumberOfUsers) {
             -Workload "Production" `
             -ManagementGroupId $managementGroup.Id
 
-        Write-Host "created subscription with name '$($newSubscription.Name)'."
+        Write-Host "created subscription with name '$($newSubscription.DisplayName)'."
         Start-Sleep -Seconds 15
     }
 }
 
 $subscriptions = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name
+Write-Host "got '$($subscriptions.Count)'. creating '$($NumberOfUsers)' azure users."
 for ($i = 1; $i -le $NumberOfUsers; $i++) {
     $user = "user$i"
     $upn = "$user@$DomainName"
@@ -60,9 +61,12 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
         -AccountEnabled $true `
         -MailNickname $user `
         -UserPrincipalName $upn
+    
+    Write-Host "created user '$($newUser.DisplayName)'."
     Start-Sleep -Seconds 15
 
-    $subscription = $subscriptions | Where-Object { $_.Name -like "*$user*" } | Select-Object -First 1
+    $subscription = $subscriptions | Where-Object { $_.DisplayName -like "*$user*" } | Select-Object -First 1
+    Write-Host "granting owner permission to '$($newUser.DisplayName)' on subscription '$($subscription.Id)'."
     $ownerRole = Get-AzRoleDefinition -Name "Owner"
     New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole `
