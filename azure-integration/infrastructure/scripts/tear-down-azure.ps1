@@ -11,7 +11,7 @@ if (-not $subscription) {
 }
 
 Write-Host "getting role assignments for subscription '$($subscription.Id)'."
-$roleAssignments = Get-AzRoleAssignment -Scope $subscription.Id
+$roleAssignments = Get-AzRoleAssignment -Scope "/subscriptions/$($subscription.Id)"
 foreach ($roleAssignment in $roleAssignments) {
     if ($roleAssignment.SignInName -like "*user*" -and $roleAssignment.ObjectType -eq "User") {
         Write-Host "removing user '$($roleAssignment.SignInName)'"
