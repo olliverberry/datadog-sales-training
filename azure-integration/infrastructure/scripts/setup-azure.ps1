@@ -13,6 +13,9 @@ param (
 
     [Parameter(Mandatory=$true)]
     [string] $OwnerId,
+
+    [Parameter(Mandatory=$true)]
+    [string] $DefaultResourceGroup,
     
     [Parameter(Mandatory=$false)]
     [string] $ResourceGroupPrefix = "datadog-sales-training"
@@ -37,7 +40,7 @@ $assignedRoles = Get-AzRoleAssignment -Scope $managementGroup.Id
 $ownerAssignedRole = $assignedRoles | Where-Object { $_.ObjectId -eq $OwnerId }
 if (-not $ownerAssignedRole) {
     Write-Host "unable to find owner assigned role for management group. will assign."
-    New-AzRoleAssignment -ObjectId $OwnerId `
+    $ownerAssignedRole = New-AzRoleAssignment -ObjectId $OwnerId `
         -RoleDefinitionId $ownerRole.Id `
         -Scope $managementGroup.Id
 }
@@ -45,12 +48,13 @@ if (-not $ownerAssignedRole) {
 $groupSubscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
 if (-not $groupSubscription) {
     Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
-    New-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id
+    $groupSubscription = New-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id
 }
 
 $createdRgs = New-Object -TypeName System.Collections.Generic.List[string]
 $context = Set-AzContext -SubscriptionObject (Get-AzSubscription -SubscriptionId $subscription.Id)
-for ($i = 1; $i -le $NumberOfUsers; $i++) { 
+$defaultResourceGroup = New-AzResourceGroup -name "$DefaultResourceGroup" -Location "Central US"
+for ($i = 1; $i -le $NumberOfUsers; $i++) {
     $user = "user$i"
     $upn = "$user@$DomainName"
     $newUser = New-AzADUser -DisplayName $user `
@@ -64,11 +68,11 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
 
     $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US"
     $createdRgs.Add($resourceGroup.ResourceId)
-    New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
+    $role = New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole.Name `
         -Scope $resourceGroup.ResourceId
     Start-Sleep -Seconds 15
 }
 
-$createdRgsComma = $createdRgs | Join-String -Separator ', '
+$createdRgsComma = $createdRgs | Join-String -Separator ','
 return $createdRgsComma

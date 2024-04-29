@@ -26,7 +26,8 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
       
-      - name: Setup Azure Environment
+      - id: setup-azure
+        name: Setup Azure Environment
         uses: azure/powershell@v2
         with:
           inlineScript: |
@@ -37,5 +38,18 @@ jobs:
               -Password $password `
               -OwnerId "${{ secrets.AZURE_OWNER_ID }}" `
               -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-            Write-Host $resourceGroups
+              -DefaultResourceGroup "${{ vars.AZURE_RESOURCE_GROUP }}"
+            "RESOURCE_GROUPS=$resourceGroups | Out-File -FilePath $env:GITHUB_OUTPUT -Append"
+            echo $resourceGroups >> "$GITHUB"
           azPSVersion: 'latest'
+
+      - name: Deploy Bicep file
+        uses: azure/arm-deploy@v2
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
+          template: ./azure-integration/infrastructure/bicep/main.bicep
+          parameters: |
+            'resourceGroups=${{ steps.setup-azure.outputs.RESOURCE_GROUPS }} 
+            adminPassword=${{ secrets.AZURE_USER_PASSWORD }}'
+          failOnStdErr: false

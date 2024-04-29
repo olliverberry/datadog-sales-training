@@ -15,7 +15,7 @@ $roleAssignments = Get-AzRoleAssignment -Scope "/subscriptions/$($subscription.I
 foreach ($roleAssignment in $roleAssignments) {
     if ($roleAssignment.SignInName -like "*user*" -and $roleAssignment.ObjectType -eq "User") {
         Write-Host "removing user '$($roleAssignment.SignInName)'"
-        Remove-AzADUser -ObjectId $roleAssignment.ObjectId
+        $removeUser = Remove-AzADUser -ObjectId $roleAssignment.ObjectId
         Start-Sleep -Seconds 15
     }
 }
