@@ -27,5 +27,4 @@ jobs:
           inlineScript: |
             ./azure-integration/infrastructure/scripts/tear-down-azure.ps1 `
               -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-            Remove-AzResourceGroup -Name "${{ vars.AZURE_RESOURCE_GROUP }}" -Force
           azPSVersion: 'latest'

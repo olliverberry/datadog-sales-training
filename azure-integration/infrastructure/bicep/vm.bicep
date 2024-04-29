@@ -7,21 +7,21 @@ param objectPrefix string
 @description('subnet id.')
 param subnetId string
 
+@description('the password of the admin user for logging into the vm.')
+@secure()
+param adminPassword string
+
+@description('network security group id.')
+param networkSecurityGroupId string
+
 @description('location.')
 param location string = resourceGroup().location
 
 @description('the size of the vm to create.')
 param vmSize string = 'Standard_B2s'
 
-@description('network security group id.')
-param networkSecurityGroupId string
-
 @description('the username for logging into the vm.')
 param adminUsername string = 'dd-sales-training'
-
-@description('the password of the admin user for logging into the vm.')
-@secure()
-param adminPassword string
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
   name: '${objectPrefix}-ni-${index}'

@@ -45,7 +45,7 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-0
 }
 
 module vmCreation './vm.bicep' = [for (rg, i) in split(resourceGroups, ','): {
-  name: rg
+  name: 'vmcreation/${rg}'
   scope: resourceGroup(rg)
   params: {
     index: i
