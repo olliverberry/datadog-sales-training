@@ -36,7 +36,7 @@ if (-not $ownerAssignedRole) {
         -Scope $managementGroup.Id
 }
 
-$subscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $SubscriptionId
+$subscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $SubscriptionId -ErrorAction SilentlyContinue
 if (-not $subscription) {
     Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
     $subscription = New-AzManagementGroupSubscription -GroupId $managementGroup.Id -SubscriptionId $SubscriptionId
@@ -58,7 +58,6 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
 
     $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US"
     $createdRgs.Add($resourceGroup.ResourceId)
-    $ownerRole = Get-AzRoleDefinition -Name "Owner"
     New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole `
         -Scope $resourceGroup.ResourceId
