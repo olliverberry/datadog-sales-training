@@ -43,7 +43,7 @@ if (-not $ownerAssignedRole) {
 }
 
 $groupSubscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
-if (-not $subscription) {
+if (-not $groupSubscription) {
     Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
     $groupSubscription = New-AzManagementGroupSubscription -GroupId $managementGroup.Id -SubscriptionId $subscription.Id
 }
