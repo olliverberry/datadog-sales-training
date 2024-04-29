@@ -18,6 +18,12 @@ param (
     [string] $ResourceGroupPrefix = "datadog-sales-training"
 )
 
+$subscription = Get-AzSubscription -SubscriptionId $SubscriptionId
+if (-not $subscription) {
+    Write-Host "unable to find subscription '$($SubscriptionId)'. please ensure that it exists."
+    exit 1
+}
+
 $ManagementGroupName = "datadog-sales-training"
 $managementGroup = Get-AzManagementGroup -GroupName $ManagementGroupName -ErrorAction SilentlyContinue
 if (-not $managementGroup) {
@@ -36,14 +42,14 @@ if (-not $ownerAssignedRole) {
         -Scope $managementGroup.Id
 }
 
-$subscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $SubscriptionId -ErrorAction SilentlyContinue
+$groupSubscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
 if (-not $subscription) {
     Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
-    $subscription = New-AzManagementGroupSubscription -GroupId $managementGroup.Id -SubscriptionId $SubscriptionId
+    $groupSubscription = New-AzManagementGroupSubscription -GroupId $managementGroup.Id -SubscriptionId $subscription.Id
 }
 
 $createdRgs = New-Object -TypeName System.Collections.Generic.List[string]
-$context = Set-AzContext -SubscriptionObject $subscription
+$context = Set-AzContext -SubscriptionObject $groupSubscription
 for ($i = 1; $i -le $NumberOfUsers; $i++) { 
     $user = "user$i"
     $upn = "$user@$DomainName"
