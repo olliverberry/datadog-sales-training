@@ -70,5 +70,5 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
     Start-Sleep -Seconds 15
 }
 
-$createdRgs | Join-String -Separator ', '
-return $createdRgs
+$createdRgsComma = $createdRgs | Join-String -Separator ', '
+return $createdRgsComma

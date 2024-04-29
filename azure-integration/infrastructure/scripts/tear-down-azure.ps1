@@ -22,7 +22,20 @@ foreach ($roleAssignment in $roleAssignments) {
 
 Set-AzContext -Subscription $subscription.Id
 $resourceGroups = Get-AzResourceGroup
+Write-Host "deleting '$($resourceGroups.Count)' resource groups."
+$failedDeletionRgs = New-Object -TypeName System.Collections.Generic.List[string]
 foreach ($resourceGroup in $resourceGroups) {
-    Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force
+    $result = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force
+    if (-not $result) {
+        $failedDeletionRgs.Add($resourceGroup.ResourceId)
+    }
     Start-Sleep -Seconds 15
+}
+
+if ($failedDeletionRgs.Count -gt 0) {
+    Write-Host "failed to delete '$($failedDeletionRgs.Count)' resource groups. will try to delete again."
+    foreach ($resourceGroup in $resourceGroups) {
+        $result = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force
+        Start-Sleep -Seconds 15
+    }
 }
