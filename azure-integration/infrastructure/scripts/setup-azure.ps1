@@ -45,11 +45,11 @@ if (-not $ownerAssignedRole) {
 $groupSubscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
 if (-not $groupSubscription) {
     Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
-    $groupSubscription = New-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id
+    New-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id
 }
 
 $createdRgs = New-Object -TypeName System.Collections.Generic.List[string]
-$context = Set-AzContext -SubscriptionObject $groupSubscription
+$context = Set-AzContext -SubscriptionObject (Get-AzSubscription -SubscriptionId $subscription.Id)
 for ($i = 1; $i -le $NumberOfUsers; $i++) { 
     $user = "user$i"
     $upn = "$user@$DomainName"
