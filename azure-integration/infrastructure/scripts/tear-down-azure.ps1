@@ -23,7 +23,7 @@ foreach ($subscription in $subscriptions) {
         }
     }
 
-    Set-AzContext -SubscriptionObject $subscription
+    Set-AzContext -Subscription $subscription.Id
     $resourceGroups = Get-AzResourceGroup
     foreach ($resourceGroup in $resourceGroups) {
         Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force
