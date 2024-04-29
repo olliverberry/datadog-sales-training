@@ -31,7 +31,7 @@ $assignedRoles = Get-AzRoleAssignment -Scope $managementGroup.Id
 $ownerAssignedRole = $assignedRoles | Where-Object { $_.ObjectId -eq $OwnerId }
 if (-not $ownerAssignedRole) {
     Write-Host "unable to find owner assigned role for management group. will assign."
-    New-AzRoleAssignment -ObjectId $OwnderId `
+    New-AzRoleAssignment -ObjectId $OwnerId `
         -RoleDefinitionId $ownerRole.Id `
         -Scope $managementGroup.Id
 }
