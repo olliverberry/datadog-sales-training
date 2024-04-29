@@ -31,10 +31,11 @@ jobs:
         with:
           inlineScript: |
             $password = ConvertTo-SecureString -String "${{ secrets.AZURE_USER_PASSWORD }}" -AsPlainText -Force
-            ./azure-integration/infrastructure/scripts/setup-azure.ps1 `
+            $resourceGroups = ./azure-integration/infrastructure/scripts/setup-azure.ps1 `
               -NumberOfUsers "${{ inputs.numberOfAzureUsers }}" `
-              -BillingString "${{ secrets.BILLING_STRING }}" `
-              -DomainName "${{ vars.DOMAIN_NAME }}" `
+              -DomainName "${{ vars.AZURE_DOMAIN_NAME }}" `
               -Password $password `
               -OwnerId "${{ secrets.AZURE_OWNER_ID }}"
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            Write-Host $resourceGroups
           azPSVersion: 'latest'

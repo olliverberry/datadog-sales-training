@@ -3,7 +3,7 @@ param (
     [int] $NumberOfUsers,
 
     [Parameter(Mandatory=$true)]
-    [string] $BillingString,
+    [string] $SubscriptionId,
 
     [Parameter(Mandatory=$true)]
     [securestring] $Password,
@@ -12,7 +12,10 @@ param (
     [string] $DomainName,
 
     [Parameter(Mandatory=$true)]
-    [string] $OwnerId
+    [string] $OwnerId,
+    
+    [Parameter(Mandatory=$false)]
+    [string] $ResourceGroupPrefix = "datadog-sales-training"
 )
 
 $ManagementGroupName = "datadog-sales-training"
@@ -33,27 +36,15 @@ if (-not $ownerAssignedRole) {
         -Scope $managementGroup.Id
 }
 
-$subscriptions = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name
-if ($subscriptions.Count -lt $NumberOfUsers) {
-    Write-Host "installing 'Az.Subscription' module."
-    Install-Module -Name "Az.Subscription" -MinimumVersion "0.9.0" -Scope CurrentUser -Force
-
-    Write-Host "missing subscriptions. will create '$($NumberOfUsers - $subscriptions.Count)' new subscriptions."
-    for ($i = $subscriptions.Count + 1; $i -le $NumberOfUsers; $i++) {
-        $newSubscription = New-AzSubscriptionAlias -AliasName "user$i-subscription" `
-            -SubscriptionName "User$i Subscription" `
-            -BillingScope $BillingString `
-            -Workload "Production" `
-            -ManagementGroupId $managementGroup.Id
-
-        Write-Host "created subscription with name '$($newSubscription.DisplayName)'."
-        Start-Sleep -Seconds 15
-    }
+$subscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $SubscriptionId
+if (-not $subscription) {
+    Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
+    $subscription = New-AzManagementGroupSubscription -GroupId $managementGroup.Id -SubscriptionId $SubscriptionId
 }
 
-$subscriptions = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name
-Write-Host "got '$($subscriptions.Count)'. creating '$($NumberOfUsers)' azure users."
-for ($i = 1; $i -le $NumberOfUsers; $i++) {
+$createdRgs = New-Object -TypeName System.Collections.Generic.List[string]
+$context = Set-AzContext -SubscriptionObject $subscription
+for ($i = 1; $i -le $NumberOfUsers; $i++) { 
     $user = "user$i"
     $upn = "$user@$DomainName"
     $newUser = New-AzADUser -DisplayName $user `
@@ -65,11 +56,14 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
     Write-Host "created user '$($newUser.DisplayName)'."
     Start-Sleep -Seconds 15
 
-    $subscription = $subscriptions | Where-Object { $_.DisplayName -like "*$user*" } | Select-Object -First 1
-    Write-Host "granting owner permission to '$($newUser.DisplayName)' on subscription '$($subscription.Id)'."
+    $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US"
+    $createdRgs.Add($resourceGroup.ResourceId)
     $ownerRole = Get-AzRoleDefinition -Name "Owner"
     New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole `
-        -Scope $subscription.Id
+        -Scope $resourceGroup.ResourceId
     Start-Sleep -Seconds 15
 }
+
+$createdRgs | Join-String -Separator ', '
+return $createdRgs
