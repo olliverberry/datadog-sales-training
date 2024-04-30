@@ -1,6 +1,3 @@
-@description('the current vm being created.')
-param index int
-
 @description('object prefix.')
 param objectPrefix string
 
@@ -24,12 +21,12 @@ param vmSize string = 'Standard_B2s'
 param adminUsername string = 'dd-sales-training'
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
-  name: '${objectPrefix}-ni-${index}'
+  name: '${objectPrefix}-ni'
   location: location
   properties: {
     ipConfigurations: [
       {
-        name: '${objectPrefix}-ipconfig-${index}'
+        name: '${objectPrefix}-ipconfig'
         properties: {
           subnet: {
             id: subnetId
@@ -44,7 +41,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
   }
 }
 
-var vmName = toLower(take('${objectPrefix}-vm${index}', 15))
+var vmName = toLower('${objectPrefix}-vm')
 resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   name: vmName
   location: location
@@ -78,7 +75,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
       ]
     }
     osProfile: {
-      computerName: vmName
+      computerName: 'webserver'
       adminUsername: adminUsername
       adminPassword: adminPassword
       windowsConfiguration: {
