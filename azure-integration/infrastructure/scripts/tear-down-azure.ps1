@@ -39,9 +39,10 @@ $provisioningState = "deleting"
 Write-Host "searching for resource groups that are not in the 'deleting' state."
 $resourceGroups = Get-AzResourceGroup `
     -Tag @{ company="datadog" } `
-    | Where-Object { $_.ProvisioningState -ne 'deleting' }
+    | Where-Object { $_.ProvisioningState -ne '$provisioningState' }
 if (-not $resourceGroups) {
-    "all resource groups are in a 'deleting' state. exiting."
+    "all resource groups are in a '$provisioningState' state. exiting."
+    exit 0
 }
 
 Write-Host "trying to delete resource groups `
