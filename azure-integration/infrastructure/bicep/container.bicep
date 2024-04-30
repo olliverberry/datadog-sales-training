@@ -13,7 +13,7 @@ param location string = resourceGroup().location
 @description('Specifies the docker container image to deploy.')
 param logContainerImage string = 'smehrens/log-generator:1.0.0'
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: containerAppLogAnalyticsName
   location: location
   properties: {
@@ -29,7 +29,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
   }
 }
 
-resource containerAppEnv 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
+resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
   name: containerAppEnvName
   location: location
   properties: {
@@ -43,7 +43,7 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2022-01-01-preview' 
   }
 }
 
-resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: containerAppName
   location: location
   properties: {
