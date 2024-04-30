@@ -17,10 +17,12 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
   name: containerAppLogAnalyticsName
   location: location
   properties: {
-    sku: {
-      name: 'PerGB2018'
+    features: {
+      immediatePurgeDataOn30Days: true
     }
-    retentionInDays: 1
+    sku: {
+      name: 'Free'
+    }
   }
 }
 
