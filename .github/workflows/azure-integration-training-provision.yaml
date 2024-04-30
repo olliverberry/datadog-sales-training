@@ -40,7 +40,7 @@ jobs:
               -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
               -DefaultResourceGroup "${{ vars.AZURE_RESOURCE_GROUP }}"
             
-            "RESOURCE_GROUPS='$resourceGroups'" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "RESOURCE_GROUPS=$resourceGroups" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           azPSVersion: 'latest'
 
       - name: Deploy Bicep file
