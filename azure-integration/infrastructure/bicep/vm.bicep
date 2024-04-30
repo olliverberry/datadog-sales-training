@@ -44,7 +44,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
   }
 }
 
-var vmName = '${objectPrefix}-vm${index}'
+var vmName = toLower(take('${objectPrefix}-vm${index}', 15))
 resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   name: vmName
   location: location

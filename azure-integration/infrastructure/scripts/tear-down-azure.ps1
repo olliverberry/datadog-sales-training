@@ -22,10 +22,18 @@ foreach ($roleAssignment in $roleAssignments) {
 
 Set-AzContext -Subscription $subscription.Id
 $resourceGroups = Get-AzResourceGroup
-Write-Host "deleting '$($resourceGroups.Count)' resource groups."
+Write-Host "deleting resource group deployments and resource groups."
 $failedDeletionRgs = New-Object -TypeName System.Collections.Generic.List[string]
 foreach ($resourceGroup in $resourceGroups) {
-    $result = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force
+    $deployments = Get-AzResourceGroupDeployment -ResourceGroupName $resourceGroup.ResourceGroupName
+    foreach ($deployment in $deployments) {
+        $result = Remove-AzResourceGroupDeployment `
+            -ResourceGroupName $resourceGroup.ResourceGroupName `
+            -Name $deployment.DeploymentName `
+            -ErrorAction Continue
+    }
+
+    $result = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force -ErrorAction Continue
     if (-not $result) {
         $failedDeletionRgs.Add($resourceGroup.ResourceId)
     }

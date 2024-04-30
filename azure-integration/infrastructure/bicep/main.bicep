@@ -6,7 +6,7 @@ param resourceGroups string
 param adminPassword string
 
 @description('the prefix that all objects will have upon creation.')
-param objectPrefix string = 'datadog-sales-training'
+param objectPrefix string = 'dd-az-training'
 
 @description('location for all resources.')
 param location string = resourceGroup().location
@@ -15,7 +15,7 @@ var subnetAddressPrefix = '10.1.0.0/24'
 var addressPrefix = '10.1.0.0/16'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
-  name: 'datadog-sales-training-vnet'
+  name: '${objectPrefix}-vnet'
   location: location
   properties: {
     addressSpace: {
@@ -28,7 +28,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
 
 resource subnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
   parent: virtualNetwork
-  name: 'datadog-sales-training-subnet0'
+  name: '${objectPrefix}-subnet0'
   properties: {
     addressPrefix: subnetAddressPrefix
     privateEndpointNetworkPolicies: 'Enabled'
@@ -37,7 +37,7 @@ resource subnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
 }
 
 resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
-  name: 'datadog-sales-training-nsg'
+  name: '${objectPrefix}-nsg'
   location: location
   properties: {
     securityRules: []
