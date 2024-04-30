@@ -18,7 +18,7 @@ param (
     [string] $DefaultResourceGroup,
     
     [Parameter(Mandatory=$false)]
-    [string] $ResourceGroupPrefix = "datadog-sales-training"
+    [string] $ResourceGroupPrefix = "dd-sales-training"
 )
 
 $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId
@@ -40,12 +40,16 @@ $assignedRoles = Get-AzRoleAssignment -Scope $managementGroup.Id
 $ownerAssignedRole = $assignedRoles | Where-Object { $_.ObjectId -eq $OwnerId }
 if (-not $ownerAssignedRole) {
     Write-Host "unable to find owner assigned role for management group. will assign."
-    $ownerAssignedRole = New-AzRoleAssignment -ObjectId $OwnerId `
+    $ownerAssignedRole = New-AzRoleAssignment `
+        -ObjectId $OwnerId `
         -RoleDefinitionId $ownerRole.Id `
         -Scope $managementGroup.Id
 }
 
-$groupSubscription = Get-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
+$groupSubscription = Get-AzManagementGroupSubscription `
+    -GroupName $managementGroup.Name `
+    -SubscriptionId $subscription.Id `
+    -ErrorAction SilentlyContinue
 if (-not $groupSubscription) {
     Write-Host "management group '$($managementGroup.DisplayName)' does not have subscription '$($SubscriptionId)'. moving it."
     $groupSubscription = New-AzManagementGroupSubscription -GroupName $managementGroup.Name -SubscriptionId $subscription.Id
@@ -53,7 +57,12 @@ if (-not $groupSubscription) {
 
 $createdRgs = New-Object -TypeName System.Collections.Generic.List[string]
 $context = Set-AzContext -SubscriptionObject (Get-AzSubscription -SubscriptionId $subscription.Id)
-$defaultResourceGroup = New-AzResourceGroup -name "$DefaultResourceGroup" -Location "Central US"
+$defaultResourceGroup = New-AzResourceGroup `
+    -Name "$DefaultResourceGroup" `
+    -Location "Central US" `
+    -Tag @{ business_unit="sales-training"; company="datadog"; env="development" } `
+    -Force
+
 for ($i = 1; $i -le $NumberOfUsers; $i++) {
     $user = "user$i"
     $upn = "$user@$DomainName"
@@ -64,7 +73,8 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
         continue
     }
 
-    $newUser = New-AzADUser -DisplayName $user `
+    $newUser = New-AzADUser `
+        -DisplayName $user `
         -Password $Password `
         -AccountEnabled $true `
         -MailNickname $user `
@@ -73,7 +83,11 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
     Write-Host "created user '$($newUser.DisplayName)'."
     Start-Sleep -Seconds 5
 
-    $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US" -Force
+    $resourceGroup = New-AzResourceGroup `
+        -Name "$ResourceGroupPrefix-$user-rg" `
+        -Location "Central US" `
+        -Tag @{ owned_by="$user"; business_unit="sales-training"; company="datadog"; env="development" } `
+        -Force
     $createdRgs.Add($resourceGroup.ResourceGroupName)
     $role = New-AzRoleAssignment -ObjectId $newUser.Id `
         -RoleDefinitionName $ownerRole.Name `

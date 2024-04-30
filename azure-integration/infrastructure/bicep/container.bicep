@@ -21,7 +21,10 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
       immediatePurgeDataOn30Days: true
     }
     sku: {
-      name: 'Free'
+      name: 'PerGB2018'
+    }
+    workspaceCapping: {
+      dailyQuotaGb: 5
     }
   }
 }
