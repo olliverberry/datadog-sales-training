@@ -51,3 +51,17 @@ jobs:
           template: ./azure-integration/infrastructure/bicep/main.bicep
           parameters: 'resourceGroups=${{ steps.setup-azure.outputs.RESOURCE_GROUPS }} adminPassword=${{ secrets.AZURE_USER_PASSWORD }}'
           failOnStdErr: false
+
+  rollback-on-failure:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    needs: [ 'create-azure-infrastructure' ]
+    if: ${{ needs.create-azure-infrastructure.result == 'failure' }}
+    steps:
+      - name: Teardown Azure Environment
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            ./azure-integration/infrastructure/scripts/tear-down-azure.ps1 `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          azPSVersion: 'latest'
