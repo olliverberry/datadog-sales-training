@@ -1,3 +1,6 @@
+@description('the tags to apply to created resources.')
+param tags object = {}
+
 @description('Specifies the name of the container app.')
 param containerAppName string = 'log-generator-${uniqueString(resourceGroup().id)}'
 
@@ -13,6 +16,7 @@ param logContainerImage string = 'smehrens/log-generator:1.0.0'
 resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
   name: containerAppEnvName
   location: location
+  tags: tags
   properties: {
     appLogsConfiguration: {
       destination: 'azure-monitor'
@@ -23,6 +27,7 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-11-02-preview' 
 resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: containerAppName
   location: location
+  tags: tags
   properties: {
     managedEnvironmentId: containerAppEnv.id
     template: {

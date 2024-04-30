@@ -11,6 +11,12 @@ param adminPassword string
 @description('network security group id.')
 param networkSecurityGroupId string
 
+@description('the current index of vm creation.')
+param index int
+
+@description('the tags to apply to created resources.')
+param tags object = {}
+
 @description('location.')
 param location string = resourceGroup().location
 
@@ -20,9 +26,14 @@ param vmSize string = 'Standard_B2s'
 @description('the username for logging into the vm.')
 param adminUsername string = 'dd-sales-training'
 
+var ownedBy = {
+  owned_by: 'user${index}'
+}
+var resourceTags = union(tags, ownedBy)
 resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
   name: '${objectPrefix}-ni'
   location: location
+  tags: resourceTags
   properties: {
     ipConfigurations: [
       {
@@ -45,6 +56,7 @@ var vmName = toLower('${objectPrefix}-vm')
 resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   name: vmName
   location: location
+  tags: resourceTags
   properties: {
     hardwareProfile: {
       vmSize: vmSize
