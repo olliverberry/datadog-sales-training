@@ -64,14 +64,14 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
         -UserPrincipalName $upn
     
     Write-Host "created user '$($newUser.DisplayName)'."
-    Start-Sleep -Seconds 15
+    Start-Sleep -Seconds 5
 
     $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US"
     $createdRgs.Add($resourceGroup.ResourceGroupName)
     $role = New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
         -RoleDefinitionName $ownerRole.Name `
         -Scope $resourceGroup.ResourceId
-    Start-Sleep -Seconds 15
+    Start-Sleep -Seconds 5
 }
 
 $createdRgs = $createdRgs | Join-String -Separator ' | '

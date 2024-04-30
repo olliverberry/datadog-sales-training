@@ -6,13 +6,14 @@ param resourceGroups string
 param adminPassword string
 
 @description('the prefix that all objects will have upon creation.')
-param objectPrefix string = 'dd-az-training'
+param objectPrefix string = 'dd-training'
 
 @description('location for all resources.')
 param location string = resourceGroup().location
 
-var subnetAddressPrefix = '10.1.0.0/24'
-var addressPrefix = '10.1.0.0/16'
+var vnetAddressPrefix = '10.1.0.0/16'
+var vmSubnetAddressPrefix = '10.1.0.0/24'
+var bastionSubnetAddressPrefix = '10.1.1.0/26'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: '${objectPrefix}-vnet'
@@ -20,19 +21,27 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        addressPrefix
+        vnetAddressPrefix
       ]
     }
   }
 }
 
-resource subnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
+resource vmSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
   parent: virtualNetwork
   name: '${objectPrefix}-subnet0'
   properties: {
-    addressPrefix: subnetAddressPrefix
+    addressPrefix: vmSubnetAddressPrefix
     privateEndpointNetworkPolicies: 'Enabled'
     privateLinkServiceNetworkPolicies: 'Enabled'
+  }
+}
+
+resource bastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
+  parent: virtualNetwork
+  name: 'AzureBastionSubnet'
+  properties: {
+    addressPrefix: bastionSubnetAddressPrefix
   }
 }
 
@@ -44,12 +53,44 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-0
   }
 }
 
+resource bastionPublicIP 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
+  name: '${objectPrefix}-bastion-ip'
+  location: location
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+  sku: {
+    name: 'Standard'
+  }
+}
+
+resource bastionHost 'Microsoft.Network/bastionHosts@2022-07-01' = {
+  name: '${objectPrefix}-bastion'
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        properties: {
+          subnet: {
+            id: '${virtualNetwork.id}/subnets/AzureBastionSubnet'
+          }
+          publicIPAddress: {
+            id: bastionPublicIP.id
+          }
+          privateIPAllocationMethod: 'Dynamic'
+        }
+        name: 'bastion-ipconfig'
+      }
+    ]
+  }
+}
+
 module vmCreation './vm.bicep' = [for rg in split(resourceGroups, ' | '): {
   name: 'vmcreation'
   scope: resourceGroup(rg)
   params: {
     objectPrefix: objectPrefix
-    subnetId: subnet.id
+    subnetId: vmSubnet.id
     networkSecurityGroupId: networkSecurityGroup.id
     adminPassword: adminPassword
     location: location
