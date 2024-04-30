@@ -3,16 +3,6 @@ param(
     [string] $SubscriptionId
 )
 
-function Remove-ResourceGroup ([string] $ResourceGroupId) {
-    try {
-        $result = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force
-    }
-    catch {
-        Write-Host "unable to delete resource group '$($resourceGroup.ResourceGroupName)'. will retry."
-        throw
-    }
-}
-
 Write-Host "getting subscription '$SubscriptionId'."
 $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId -ErrorAction SilentlyContinue
 if (-not $subscription) {
@@ -33,32 +23,32 @@ foreach ($roleAssignment in $roleAssignments) {
 $azContext = Set-AzContext -Subscription $subscription.Id
 $resourceGroups = Get-AzResourceGroup
 Write-Host "deleting resource group deployments and resource groups."
-$rgDeletionJobs = New-Object -TypeName System.Collections.Generic.List[System.Management.Automation.Job]
+$deletionJobs = New-Object -TypeName 'System.Collections.Generic.List[Microsoft.Azure.Commands.Common.AzureLongRunningJob]'
 foreach ($resourceGroup in $resourceGroups) {
     Write-Host "deleting resource group '$($resourceGroup.ResourceGroupName)'."
-    $job = Start-Job `
-        -ScriptBlock { Remove-ResourceGroup -ResourceGroupId $resourceGroup.ResourceId } `
-        -Name $resourceGroup.ResourceId
-    $rgDeletionJobs.Add($job)
+    $job = Remove-AzResourceGroup -ResourceGroupId $resourceGroup.ResourceId -Force -AsJob
+    $deletionJobs.Add($job)
 
     Start-Sleep -Seconds 5
 }
 
-Write-Host "waiting for '$($rgDeletionJobs.Count)' resource group deletion jobs to complete."
-Wait-Job -Job $rgDeletionJobs
-$failedJobs = $rgDeletionJobs | Where-Object { $_.State -eq 'Failed' }
-
+Write-Host "waiting for '$($deletionJobs.Count)' resource group deletion jobs to complete."
+Wait-Job -Job $deletionJobs
+$failedJobs = $deletionJobs | Where-Object { $_.State -eq 'Failed' }
 if ($failedJobs.Count -eq 0) {
     Write-Host "all resource group deletion jobs completed successfully. exiting."
     exit 0
 }
 
 Write-Host "failed to delete '$($failedJobs.Count)' resource groups. will try to delete again."
-foreach ($failedJob in $failedJobs) {
-    try {
-        $result = Remove-AzResourceGroup -Id $failedJob.Name -Force
-    }
-    catch {
-        Write-Host "failed to delete resource group '$($failedJob.Name)'. please delete manually."
-    }
+$deletionJobs.Clear()
+$resourceGroups = Get-AzResourceGroup | Where-Object { $_.ProvisioningState -ne 'deleting' }
+Write-Host "trying to delete resource groups `
+    '$($resourceGroups | Join-String -Property ResourceGroupName -Separator ', ')' again.`
+    please check that they are deleted."
+foreach ($resourceGroup in $resourceGroups) {
+    $job = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force -AsJob
+    $deletionJobs.Add($job)
+
+    Start-Sleep -Seconds 5
 }
