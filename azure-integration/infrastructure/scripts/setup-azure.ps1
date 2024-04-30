@@ -68,7 +68,8 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
 
     $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US"
     $createdRgs.Add($resourceGroup.ResourceGroupName)
-    $role = New-AzRoleAssignment -SignInName $newUser.UserPrincipalName `
+    New-AzRoleAssignment -ObjectId $newUser.Id -RoleDefinitionName 
+    $role = New-AzRoleAssignment -ObjectId $newUser.Id `
         -RoleDefinitionName $ownerRole.Name `
         -Scope $resourceGroup.ResourceId
     Start-Sleep -Seconds 5
