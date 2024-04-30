@@ -13,7 +13,9 @@ param location string = resourceGroup().location
 
 var vnetAddressPrefix = '10.1.0.0/16'
 var vmSubnetAddressPrefix = '10.1.0.0/24'
+var vmSubnetName = '${objectPrefix}-subnet0'
 var bastionSubnetAddressPrefix = '10.1.1.0/26'
+var bastionSubnetName = 'AzureBastionSubnet'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: '${objectPrefix}-vnet'
@@ -24,24 +26,22 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         vnetAddressPrefix
       ]
     }
-  }
-}
-
-resource vmSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
-  parent: virtualNetwork
-  name: '${objectPrefix}-subnet0'
-  properties: {
-    addressPrefix: vmSubnetAddressPrefix
-    privateEndpointNetworkPolicies: 'Enabled'
-    privateLinkServiceNetworkPolicies: 'Enabled'
-  }
-}
-
-resource bastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
-  parent: virtualNetwork
-  name: 'AzureBastionSubnet'
-  properties: {
-    addressPrefix: bastionSubnetAddressPrefix
+    subnets: [
+      {
+        name: bastionSubnetName
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefix
+        }
+      }
+      {
+        name: vmSubnetName
+        properties: {
+          addressPrefix: vmSubnetAddressPrefix
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+    ]
   }
 }
 
@@ -72,7 +72,7 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2022-07-01' = {
       {
         properties: {
           subnet: {
-            id: '${virtualNetwork.id}/subnets/AzureBastionSubnet'
+            id: '${virtualNetwork.id}/subnets/${bastionSubnetName}'
           }
           publicIPAddress: {
             id: bastionPublicIP.id
@@ -85,12 +85,13 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2022-07-01' = {
   }
 }
 
+var vmSubnet = first(filter(virtualNetwork.properties.subnets, subnet => toLower(subnet.name) == toLower(vmSubnetName)))
 module vmCreation './vm.bicep' = [for rg in split(resourceGroups, ' | '): {
   name: 'vmcreation'
   scope: resourceGroup(rg)
   params: {
     objectPrefix: objectPrefix
-    subnetId: vmSubnet.id
+    subnetId: vmSubnet!.id
     networkSecurityGroupId: networkSecurityGroup.id
     adminPassword: adminPassword
     location: location
