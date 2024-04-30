@@ -97,3 +97,10 @@ module vmCreation './vm.bicep' = [for rg in split(resourceGroups, ' | '): {
     location: location
   }
 }]
+
+module containerApp './container.bicep' = {
+  name: 'containerapp'
+  params: {
+    location: location
+  }
+}

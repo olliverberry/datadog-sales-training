@@ -1,0 +1,64 @@
+@description('Specifies the name of the container app.')
+param containerAppName string = 'log-generator-${uniqueString(resourceGroup().id)}'
+
+@description('Specifies the name of the container app environment.')
+param containerAppEnvName string = 'log-generator-env-${uniqueString(resourceGroup().id)}'
+
+@description('Specifies the name of the log analytics workspace.')
+param containerAppLogAnalyticsName string = 'log-generator-log-${uniqueString(resourceGroup().id)}'
+
+@description('Specifies the location for all resources.')
+param location string = resourceGroup().location
+
+@description('Specifies the docker container image to deploy.')
+param logContainerImage string = 'smehrens/log-generator:1.0.0'
+
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  name: containerAppLogAnalyticsName
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 1
+  }
+}
+
+resource containerAppEnv 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
+  name: containerAppEnvName
+  location: location
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logAnalytics.properties.customerId
+        sharedKey: logAnalytics.listKeys().primarySharedKey
+      }
+    }
+  }
+}
+
+resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
+  name: containerAppName
+  location: location
+  properties: {
+    managedEnvironmentId: containerAppEnv.id
+    template: {
+      revisionSuffix: 'firstrevision'
+      containers: [
+        {
+          name: containerAppName
+          image: logContainerImage
+          resources: {
+            cpu: json('.25')
+            memory: '.5Gi'
+          }
+        }
+      ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 1
+      }
+    }
+  }
+}

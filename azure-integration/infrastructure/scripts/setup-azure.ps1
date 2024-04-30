@@ -57,6 +57,13 @@ $defaultResourceGroup = New-AzResourceGroup -name "$DefaultResourceGroup" -Locat
 for ($i = 1; $i -le $NumberOfUsers; $i++) {
     $user = "user$i"
     $upn = "$user@$DomainName"
+
+    $currentUser = Get-AzADUser -Filter "DisplayName eq '$user'"
+    if ($currentUser) {
+        Write-Host "user '$user' already exists. this could be an error. skipping to the next user."
+        continue
+    }
+
     $newUser = New-AzADUser -DisplayName $user `
         -Password $Password `
         -AccountEnabled $true `
@@ -66,7 +73,7 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
     Write-Host "created user '$($newUser.DisplayName)'."
     Start-Sleep -Seconds 5
 
-    $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US"
+    $resourceGroup = New-AzResourceGroup -Name "$ResourceGroupPrefix-$user-rg" -Location "Central US" -Force
     $createdRgs.Add($resourceGroup.ResourceGroupName)
     $role = New-AzRoleAssignment -ObjectId $newUser.Id `
         -RoleDefinitionName $ownerRole.Name `

@@ -45,7 +45,7 @@ $deletionJobs.Clear()
 $resourceGroups = Get-AzResourceGroup | Where-Object { $_.ProvisioningState -ne 'deleting' }
 Write-Host "trying to delete resource groups `
     '$($resourceGroups | Join-String -Property ResourceGroupName -Separator ', ')' again.`
-    please check that they are deleted."
+    please check that they are deleted as this is the last attempt."
 foreach ($resourceGroup in $resourceGroups) {
     $job = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force -AsJob
     $deletionJobs.Add($job)
