@@ -58,6 +58,14 @@ jobs:
     needs: [ 'create-azure-infrastructure' ]
     if: ${{ failure() || cancelled() }}
     steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in with Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+          
       - name: Teardown Azure Environment
         uses: azure/powershell@v2
         with:
