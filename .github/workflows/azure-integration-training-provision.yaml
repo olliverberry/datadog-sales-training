@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     needs: [ 'create-azure-infrastructure' ]
-    if: ${{ needs.create-azure-infrastructure.result == 'failure' }}
+    if: ${{ failure() || cancelled() }}
     steps:
       - name: Teardown Azure Environment
         uses: azure/powershell@v2
