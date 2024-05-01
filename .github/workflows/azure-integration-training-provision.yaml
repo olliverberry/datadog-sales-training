@@ -54,6 +54,7 @@ jobs:
         name: Deploy Bicep File
         continue-on-error: true
         uses: azure/arm-deploy@v2
+        timeout-minutes: 20
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
@@ -64,6 +65,7 @@ jobs:
       - name: Redeploy Bicep File
         if: ${{ steps.deploy-bicep.outcome == 'failure' }}
         uses: azure/arm-deploy@v2
+        timeout-minutes: 20
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
