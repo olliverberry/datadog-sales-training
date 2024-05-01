@@ -14,6 +14,15 @@ param location string = resourceGroup().location
 @description('the number of webapps to create.')
 param webAppCount int = 1
 
+@description('the name of the app service plan.')
+param serverFarmName string = 'log-generator-${uniqueString(resourceGroup().id)}-asp'
+
+@description('the sku for the app service plan.')
+param sku string = 'Basic'
+
+@description('the sku code for the app service plan.')
+param skuCode string = 'B1'
+
 var vnetAddressPrefix = '10.1.0.0/16'
 var vmSubnetAddressPrefix = '10.1.0.0/24'
 var vmSubnetName = '${objectPrefix}-subnet0'
@@ -112,11 +121,26 @@ module vmCreation './vm.bicep' = [for (rg, i) in split(resourceGroups, ' | '): {
   }
 }]
 
+resource serverFarm 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: serverFarmName
+  location: location
+  tags: tags
+  properties: {
+    reserved: true
+  }
+  sku: {
+    tier: sku
+    name: skuCode
+  }
+  kind: 'linux'
+}
+
 module webApp './webapp.bicep' = [for i in range(0, webAppCount): {
   name: 'webApp-${i}'
   params: {
     location: location
     index: i
     tags: tags
+    serverFarmId: serverFarm.id
   }
 }]
