@@ -29,7 +29,7 @@ In order to use these workflows, you will need to do the following:
     * An environment variable called AWS_REGION with the AWS Region to create the AWS Stack in.
 
 ## Running the workflows
-With the Github Environment created, we can start to use the actions to deploy our AWS resources. Navigate to the `Actions` tab in your forked repository and click on the `create aws resources` workflow. Once on the `create aws resources` workflow page, select `Run workflow` and choose the Github Environment previously created. Additionally, specify the number of IAM users to create.
+With the Github Environment created, we can start to use the actions to deploy our AWS resources. Navigate to the `Actions` tab in your forked repository and click on the `create aws resources` workflow. Once on the `create aws resources` workflow page, select `Run workflow` and choose the Github Environment previously created. Additionally, specify the number of IAM users to create and EC2 instances to create.
 
 When you no longer need the resources in AWS, run the `delete aws resources` workflow targeting the Github Environment that was used when running the `create aws resources` workflow.
 
