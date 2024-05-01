@@ -116,6 +116,7 @@ module webApp './webapp.bicep' = [for i in range(0, webAppCount): {
   name: 'webApp-${i}'
   params: {
     location: location
+    index: i
     tags: tags
   }
 }]

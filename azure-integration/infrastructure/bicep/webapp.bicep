@@ -1,3 +1,6 @@
+@description('index of the web app being created.')
+param index int
+
 @description('the tags to apply to created resources.')
 param tags object = {}
 
@@ -5,10 +8,10 @@ param tags object = {}
 param location string = resourceGroup().location
 
 @description('the name of the app service plan.')
-param serverFarmName string = 'log-generator-asp-${uniqueString(resourceGroup().id)}'
+param serverFarmName string = 'log-generator-${uniqueString(resourceGroup().id)}-asp'
 
 @description('the name of the web app.')
-param webAppName string = 'log-generator-app-${uniqueString(resourceGroup().id)}'
+param webAppName string = 'log-generator-${uniqueString(resourceGroup().id)}-app'
 
 @description('the sku for the app service plan.')
 param sku string = 'Basic'
@@ -20,9 +23,12 @@ param skuCode string = 'B1'
 param logGeneratorImage string = 'index.docker.io/smehrens/log-generator-api:1.0.0'
 
 resource serverFarm 'Microsoft.Web/serverfarms@2023-01-01' = {
-  name: serverFarmName
+  name: '${serverFarmName}-${index}'
   location: location
   tags: tags
+  properties: {
+    reserved: true
+  }
   sku: {
     tier: sku
     name: skuCode
@@ -31,7 +37,7 @@ resource serverFarm 'Microsoft.Web/serverfarms@2023-01-01' = {
 }
 
 resource webApp 'Microsoft.Web/sites@2023-01-01' = {
-  name: webAppName
+  name: '${webAppName}-${index}'
   location: location
   tags: tags
   properties: {
