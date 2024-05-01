@@ -47,7 +47,7 @@ jobs:
         name: Calculate number of web apps to create
         shell: pwsh
         run: |
-          $webAppCount = [int][Math]::Ceiling("${{ inputs.numberOfAzureUsers }}" / 5)
+          $webAppCount = [int][Math]::Ceiling(${{ inputs.numberOfAzureUsers }} / 5)
           "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Deploy Bicep file

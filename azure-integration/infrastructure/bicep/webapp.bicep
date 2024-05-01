@@ -17,7 +17,7 @@ param sku string = 'Basic'
 param skuCode string = 'B1'
 
 @description('log generator image.')
-param logGeneratorImage string = 'smehrens/log-generator-api:0.0.3'
+param logGeneratorImage string = 'index.docker.io/smehrens/log-generator-api:1.0.0'
 
 resource serverFarm 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: serverFarmName
