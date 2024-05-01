@@ -36,7 +36,7 @@ Write-Host "waiting for '$($deletionJobs.Count)' resource group deletion jobs to
 Wait-Job -Job $deletionJobs -Timeout $jobTimeout
 
 $provisioningState = "deleting"
-Write-Host "searching for resource groups that are not in the 'deleting' state."
+Write-Host "searching for resource groups that are not in the '$provisioningState' state."
 $resourceGroups = Get-AzResourceGroup `
     -Tag @{ company="datadog" } `
     | Where-Object { $_.ProvisioningState -ne '$provisioningState' }
@@ -46,8 +46,9 @@ if (-not $resourceGroups) {
 }
 
 Write-Host "trying to delete resource groups `
-    '$($resourceGroups | Join-String -Property ResourceGroupName -Separator ', ')' again.`
-    please check that they are deleted as this is the last attempt."
+'$($resourceGroups | Join-String -Property ResourceGroupName -Separator ', ')' again.`
+please check that they are deleted as this is the last attempt."
+
 foreach ($resourceGroup in $resourceGroups) {
     $job = Remove-AzResourceGroup -Id $resourceGroup.ResourceId -Force -AsJob
     Start-Sleep -Seconds 5
