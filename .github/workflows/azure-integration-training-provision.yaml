@@ -50,11 +50,23 @@ jobs:
           $webAppCount = [int][Math]::Ceiling(${{ inputs.numberOfAzureUsers }} / 5)
           "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Deploy Bicep file
-        uses: azure/arm-deploy@v2
+      - name: Deploy Bicep
+        uses: azure/cli@v2
         with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
-          template: ./azure-integration/infrastructure/bicep/main.bicep
-          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
-          failOnStdErr: false
+          inlineScript: |
+            az stack group create \
+              --name StackName \
+              --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+              --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+              --template-file ./azure-integration/infrastructure/bicep/main.bicep
+              --deny-settings-mode none \
+              --parameters resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" \
+              adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" \
+              webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"
+
+      - name: Check Bicep Deployment Stack Status
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            ./azure-integration/infrastructure/scripts/check-bicep-deployment.ps1
+          azPSVersion: 'latest'

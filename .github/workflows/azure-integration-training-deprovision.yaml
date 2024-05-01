@@ -20,7 +20,16 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
-      
+
+      - name: Remove Bicep Deployment Stack
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            ./azure-integration/infrastructure/scripts/remove-bicep.ps1 `
+              -DeploymentStackName "${{ vars.AZURE_DEPLOYMENT_STACK_NAME }}" `
+              -ResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}"
+          azPSVersion: 'latest'
+          
       - name: Teardown Azure Environment
         uses: azure/powershell@v2
         with:
