@@ -11,6 +11,9 @@ param objectPrefix string = 'dd-training'
 @description('location for all resources.')
 param location string = resourceGroup().location
 
+@description('the number of webapps to create.')
+param webAppCount int = 1
+
 var vnetAddressPrefix = '10.1.0.0/16'
 var vmSubnetAddressPrefix = '10.1.0.0/24'
 var vmSubnetName = '${objectPrefix}-subnet0'
@@ -109,10 +112,10 @@ module vmCreation './vm.bicep' = [for (rg, i) in split(resourceGroups, ' | '): {
   }
 }]
 
-module containerApp './container.bicep' = {
-  name: 'containerapp'
+module webApp './webapp.bicep' = [for i in range(0, webAppCount): {
+  name: 'webApp-${i}'
   params: {
     location: location
     tags: tags
   }
-}
+}]

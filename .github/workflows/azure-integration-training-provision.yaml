@@ -43,11 +43,18 @@ jobs:
             "RESOURCE_GROUPS=$resourceGroups" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           azPSVersion: 'latest'
 
+      - id: calculate-webapp-count
+        name: Calculate number of web apps to create
+        shell: pwsh
+        run: |
+          $webAppCount = [int][Math]::Ceiling("${{ inputs.numberOfAzureUsers }}" / 5)
+          "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Deploy Bicep file
         uses: azure/arm-deploy@v2
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
           template: ./azure-integration/infrastructure/bicep/main.bicep
-          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}"'
+          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
           failOnStdErr: false

@@ -27,7 +27,7 @@ param vmSize string = 'Standard_B2s'
 param adminUsername string = 'dd-sales-training'
 
 var ownedBy = {
-  owned_by: 'user${index}'
+  owned_by: 'user${index + 1}'
 }
 var resourceTags = union(tags, ownedBy)
 resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
