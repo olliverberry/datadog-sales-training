@@ -44,29 +44,30 @@ jobs:
           azPSVersion: 'latest'
 
       - id: calculate-webapp-count
-        name: Calculate number of web apps to create
+        name: Calculate Web App Count
         shell: pwsh
         run: |
           $webAppCount = [int][Math]::Ceiling(${{ inputs.numberOfAzureUsers }} / 5)
           "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Deploy Bicep
-        uses: azure/cli@v2
+      - id: deploy-bicep
+        name: Deploy Bicep File
+        continue-on-error: true
+        uses: azure/arm-deploy@v2
         with:
-          inlineScript: |
-            az stack group create \
-              --name StackName \
-              --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-              --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-              --template-file ./azure-integration/infrastructure/bicep/main.bicep
-              --deny-settings-mode none \
-              --parameters resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" \
-              adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" \
-              webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
+          template: ./azure-integration/infrastructure/bicep/main.bicep
+          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
+          failOnStdErr: false
 
-      - name: Check Bicep Deployment Stack Status
-        uses: azure/powershell@v2
+      - name: Redeploy Bicep File
+        if: ${{ steps.deploy-bicep.outcome == 'failure' }}
+        uses: azure/arm-deploy@v2
         with:
-          inlineScript: |
-            ./azure-integration/infrastructure/scripts/check-bicep-deployment.ps1
-          azPSVersion: 'latest'
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
+          template: ./azure-integration/infrastructure/bicep/main.bicep
+          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
+          failOnStdErr: false
+
