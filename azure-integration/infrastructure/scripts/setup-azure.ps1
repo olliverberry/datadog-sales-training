@@ -18,7 +18,10 @@ param (
     [string] $DefaultResourceGroup,
     
     [Parameter(Mandatory=$false)]
-    [string] $ResourceGroupPrefix = "dd-training"
+    [string] $ResourceGroupPrefix = "dd-training",
+
+    [Parameter(Mandatory=$false)]
+    [string] $Location = "Central US"
 )
 
 $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId
@@ -59,7 +62,7 @@ $createdRgs = New-Object -TypeName System.Collections.Generic.List[string]
 $context = Set-AzContext -SubscriptionObject (Get-AzSubscription -SubscriptionId $subscription.Id)
 $defaultResourceGroup = New-AzResourceGroup `
     -Name "$DefaultResourceGroup" `
-    -Location "Central US" `
+    -Location "$Location" `
     -Tag @{ business_unit="sales-training"; company="datadog"; env="development" } `
     -Force
 
@@ -85,7 +88,7 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
 
     $resourceGroup = New-AzResourceGroup `
         -Name "$ResourceGroupPrefix-$user-rg" `
-        -Location "Central US" `
+        -Location "$Location" `
         -Tag @{ owned_by="$user"; business_unit="sales-training"; company="datadog"; env="development" } `
         -Force
     $createdRgs.Add($resourceGroup.ResourceGroupName)

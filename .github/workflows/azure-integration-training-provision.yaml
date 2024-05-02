@@ -12,6 +12,15 @@ on:
         type: number
         required: false
         default: 1
+      azureRegion:
+        description: 'the azure region to deploy resources into.'
+        type: choice
+        required: false
+        default: 'Central US'
+        options:
+          - 'Central US'
+          - 'East US'
+          - 'East US 2'
 
 jobs:
   create-azure-infrastructure:
@@ -38,7 +47,8 @@ jobs:
               -Password $password `
               -OwnerId "${{ secrets.AZURE_OWNER_ID }}" `
               -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
-              -DefaultResourceGroup "${{ vars.AZURE_RESOURCE_GROUP }}"
+              -DefaultResourceGroup "${{ vars.AZURE_RESOURCE_GROUP }}" `
+              -Location "${{ inputs.azureRegion }}"
             
             "RESOURCE_GROUPS=$resourceGroups" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           azPSVersion: 'latest'
@@ -67,15 +77,21 @@ jobs:
         with:
           inlineScript: |
             Write-Host "Checking resource group deployment statuses."
+            $foundBadDeployment = $false
             $resourceGroups = Get-AzResourceGroup -Tag @{ company="datadog" }
             foreach ($rg in $resourceGroups) {
               $deployments = Get-AzResourceGroupDeployment -ResourceGroupName $rg.ResourceGroupName
               foreach ($deployment in $deployments) {
                 if ($deployment.ProvisioningState -ne "succeeded") {
+                  $foundBadDeployment = $true
                   Write-Host "Resource group deployment '$($deployment.DeploymentName)' in resource group '$($rg.ResourceGroupName)' has provisioning state '$($deployment.ProvisioningState)'."
                   Write-Host "Please check this resource group deployment in Azure and re-deploy if neccessary."
                 }
               }
+            }
+
+            if (-not $foundBadDeployment) {
+              Write-Host "All resource group deployments were provisioned successfully."
             }
           azPSVersion: 'latest'
 
