@@ -18,7 +18,7 @@ param (
     [string] $DefaultResourceGroup,
     
     [Parameter(Mandatory=$false)]
-    [string] $ResourceGroupPrefix = "dd-sales-training"
+    [string] $ResourceGroupPrefix = "dd-training"
 )
 
 $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId

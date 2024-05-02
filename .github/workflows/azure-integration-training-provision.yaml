@@ -62,14 +62,20 @@ jobs:
           parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
           failOnStdErr: false
 
-      - name: Redeploy Bicep File
-        if: ${{ steps.deploy-bicep.outcome == 'failure' }}
-        uses: azure/arm-deploy@v2
-        timeout-minutes: 20
+      - name: Check Bicep Deployment Status
+        uses: azure/powershell@v2
         with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
-          template: ./azure-integration/infrastructure/bicep/main.bicep
-          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
-          failOnStdErr: false
+          inlineScript: |
+            Write-Host "Checking resource group deployment statuses."
+            $resourceGroups = Get-AzResourceGroup -Tag @{ company="datadog" }
+            foreach ($rg in $resourceGroups) {
+              $deployments = Get-AzResourceGroupDeployment -ResourceGroupName $rg.ResourceGroupName
+              foreach ($deployment in $deployments) {
+                if ($deployment.ProvisioningState -ne "succeeded") {
+                  Write-Host "Resource group deployment '$($deployment.DeploymentName)' in resource group '$($rg.ResourceGroupName)' has provisioning state '$($deployment.ProvisioningState)'."
+                  Write-Host "Please check this resource group deployment in Azure and re-deploy if neccessary."
+                }
+              }
+            }
+          azPSVersion: 'latest'
 
