@@ -60,7 +60,7 @@ jobs:
           $webAppCount = [int][Math]::Ceiling(${{ inputs.numberOfAzureUsers }} / 5)
           "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: 'Create Bicep Deployment Stack'
+      - name: Create Bicep Deployment Stack
         uses: azure/powershell@v2
         with:
           azPSVersion: 'latest'
@@ -70,29 +70,32 @@ jobs:
               adminPassword="${{ secrets.AZURE_USER_PASSWORD }}";
               webAppCount=[int]"${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}";
             }
-            New-AzResourceGroupDeploymentStack `
+            $deploymentJob = New-AzResourceGroupDeploymentStack `
               -Name "dd-training-deployment-stack" `
               -ResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}" `
               -TemplateFile "./azure-integration/infrastructure/bicep/main.bicep" `
               -TemplateParameterObject $templateParams `
               -DenySettingsMode "none" `
               -SkipTemplateParameterPrompt `
-              -Force
+              -Force `
+              -AsJob
+          
+            Wait-Job -Job $deploymentJob -Timeout 600           
 
-      - name: Check Bicep Deployment Status
+      - name: Check Bicep Deployment Stack Status
         uses: azure/powershell@v2
         with:
           inlineScript: |
-            Write-Host "Checking resource group deployment statuses."
+            Write-Host "Checking resource group deployment stack statuses."
             $foundBadDeployment = $false
             $resourceGroups = Get-AzResourceGroup -Tag @{ company="datadog" }
             foreach ($rg in $resourceGroups) {
-              $deployments = Get-AzResourceGroupDeployment -ResourceGroupName $rg.ResourceGroupName
+              $deployments = Get-AzResourceGroupDeploymentStack - $rg.ResourceGroupName
               foreach ($deployment in $deployments) {
                 if ($deployment.ProvisioningState -ne "succeeded") {
                   $foundBadDeployment = $true
-                  Write-Host "Resource group deployment '$($deployment.DeploymentName)' in resource group '$($rg.ResourceGroupName)' has provisioning state '$($deployment.ProvisioningState)'."
-                  Write-Host "Please check this resource group deployment in Azure and re-deploy if neccessary."
+                  Write-Host "Resource group deployment stack '$($deployment.DeploymentName)' in resource group '$($rg.ResourceGroupName)' has provisioning state '$($deployment.ProvisioningState)'."
+                  Write-Host "Please check this resource group deployment stack in Azure and re-deploy if neccessary."
                 }
               }
             }
