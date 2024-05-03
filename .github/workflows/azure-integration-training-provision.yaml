@@ -76,7 +76,8 @@ jobs:
               -TemplateFile "./azure-integration/infrastructure/bicep/main.bicep" `
               -TemplateParameterObject $templateParams `
               -DenySettingsMode "none" `
-              -SkipTemplateParameterPrompt
+              -SkipTemplateParameterPrompt `
+              -Force
 
       - name: Check Bicep Deployment Status
         uses: azure/powershell@v2
