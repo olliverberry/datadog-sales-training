@@ -74,7 +74,7 @@ jobs:
             New-AzResourceGroupDeploymentStack `
               -Name "dd-training-deployment-stack" `
               -ResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}" `
-              -TemplateFile ".azure-integration/infrastructure/bicep/main.bicep" `
+              -TemplateFile "./azure-integration/infrastructure/bicep/main.bicep" `
               -TemplateParameterObject $templateParams `
               -DenySettingsMode "none"
 
