@@ -65,10 +65,9 @@ jobs:
         with:
           azPSVersion: 'latest'
           inlineScript: |
-            $adminPassword = ConvertTo-SecureString -String "${{ secrets.AZURE_USER_PASSWORD }}" -AsPlainText -Force
             $templateParams = @{
               resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}";
-              adminPassword=$adminPassword;
+              adminPassword="${{ secrets.AZURE_USER_PASSWORD }}";
               webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}";
             }
             New-AzResourceGroupDeploymentStack `
