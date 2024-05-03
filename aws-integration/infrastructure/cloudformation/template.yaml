@@ -39,7 +39,7 @@ Parameters:
   EC2sString:
     Type: CommaDelimitedList
     Description: The number of EC2s to create
-    Default: "-1"
+    Default: "1"
 
 Resources:
   'Fn::ForEach::CreateIAMUsers':
@@ -210,7 +210,7 @@ Resources:
               SubnetId: !Ref SalesTrainingPublicSubnet
           Tags:
             - Key: Name
-              Value: !Join [ "", [ datadog-sales-ec2, !Ref EC2 ] ]
+              Value: !Join [ "", [ 'datadog-sales-ec2', '-vm', !Ref EC2 ] ]
             - Key: env
               Value: development
             - Key: company
