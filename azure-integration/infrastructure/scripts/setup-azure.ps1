@@ -94,7 +94,7 @@ for ($i = 1; $i -le $NumberOfUsers; $i++) {
     $createdRgs.Add($resourceGroup.ResourceGroupName)
     $role = New-AzRoleAssignment -ObjectId $newUser.Id `
         -RoleDefinitionName $ownerRole.Name `
-        -Scope $resourceGroup.ResourceId
+        -Scope $managementGroup.Id
     Start-Sleep -Seconds 5
 }
 

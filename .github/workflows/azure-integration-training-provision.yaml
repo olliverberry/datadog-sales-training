@@ -60,17 +60,20 @@ jobs:
           $webAppCount = [int][Math]::Ceiling(${{ inputs.numberOfAzureUsers }} / 5)
           "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - id: deploy-bicep
-        name: Deploy Bicep File
-        continue-on-error: true
-        uses: azure/arm-deploy@v2
-        timeout-minutes: 20
+      - name: 'Create Bicep Deployment Stack'
+        uses: azure/powershell@v2
         with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
-          template: ./azure-integration/infrastructure/bicep/main.bicep
-          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
-          failOnStdErr: false
+          inlineScript: |
+            $adminPassword = ConvertTo-SecureString -String "${{ secrets.AZURE_USER_PASSWORD }}" -AsPlainText -Force
+            $templateParams = @{
+              resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}";
+              adminPassword=$adminPassword;
+              webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}";
+            }
+            ./azure-integration/infrastructure/scripts/deploy-bicep.ps1 `
+              -DeploymentStackName "dd-training-deployment-stack" `
+              -DefaultResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}" `
+              -TemplateParameters $templateParams
 
       - name: Check Bicep Deployment Status
         uses: azure/powershell@v2
