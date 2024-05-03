@@ -75,7 +75,8 @@ jobs:
               -ResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}" `
               -TemplateFile "./azure-integration/infrastructure/bicep/main.bicep" `
               -TemplateParameterObject $templateParams `
-              -DenySettingsMode "none"
+              -DenySettingsMode "none" `
+              -SkipTemplateParameterPrompt
 
       - name: Check Bicep Deployment Status
         uses: azure/powershell@v2
