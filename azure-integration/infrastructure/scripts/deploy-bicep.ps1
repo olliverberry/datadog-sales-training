@@ -13,5 +13,5 @@ New-AzResourceGroupDeploymentStack `
     -Name "$DeploymentStackName" `
     -ResourceGroupName "$DefaultResourceGroupName" `
     -TemplateFile "../bicep/main.bicep" `
-    -TemplateParameterObject $TemplateParameters
+    -TemplateParameterObject $TemplateParameters `
     -DenySettingsMode "none"
