@@ -71,10 +71,12 @@ jobs:
               adminPassword=$adminPassword;
               webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}";
             }
-            ./azure-integration/infrastructure/scripts/deploy-bicep.ps1 `
-              -DeploymentStackName "dd-training-deployment-stack" `
-              -DefaultResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}" `
-              -TemplateParameters $templateParams
+            New-AzResourceGroupDeploymentStack `
+              -Name "dd-training-deployment-stack" `
+              -ResourceGroupName "${{ vars.AZURE_RESOURCE_GROUP }}" `
+              -TemplateFile ".azure-integration/infrastructure/bicep/main.bicep" `
+              -TemplateParameterObject $templateParams `
+              -DenySettingsMode "none"
 
       - name: Check Bicep Deployment Status
         uses: azure/powershell@v2
