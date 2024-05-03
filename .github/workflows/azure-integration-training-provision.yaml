@@ -68,7 +68,7 @@ jobs:
             $templateParams = @{
               resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}";
               adminPassword="${{ secrets.AZURE_USER_PASSWORD }}";
-              webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}";
+              webAppCount=[int]"${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}";
             }
             New-AzResourceGroupDeploymentStack `
               -Name "dd-training-deployment-stack" `
