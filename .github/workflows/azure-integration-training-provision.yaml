@@ -63,6 +63,7 @@ jobs:
       - name: 'Create Bicep Deployment Stack'
         uses: azure/powershell@v2
         with:
+          azPSVersion: 'latest'
           inlineScript: |
             $adminPassword = ConvertTo-SecureString -String "${{ secrets.AZURE_USER_PASSWORD }}" -AsPlainText -Force
             $templateParams = @{
