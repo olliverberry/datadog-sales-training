@@ -10,6 +10,8 @@ The `create aws resources` workflow creates an AWS Stack using a CloudFormation 
 * An ECS TaskDefinition
 * An ECS Service
 * An AWS CloudWatch Log Group
+* An S3 Bucket
+* An SNS Topic
 
 You can see exactly what the template creates by looking at the [template.yaml file](infrastructure/cloudformation/template.yaml).
 The `delete aws resources` workflow will delete the AWS Stack created by the `create aws resources` workflow which will in turn clean up the AWS resources.
@@ -27,6 +29,8 @@ In order to use these workflows, you will need to do the following:
     * An environment variable called AWS_REGION with the AWS Region to create the AWS Stack in.
 
 ## Running the workflows
-With the Github Environment created, we can start to use the actions to deploy our AWS resources. Navigate to the `Actions` tab in your forked repository and click on the `create aws resources` workflow. Once on the `create aws resources` workflow page, select `Run workflow` and choose the Github Environment previously created. Additionally, specify the number of IAM users to create.
+With the Github Environment created, we can start to use the actions to deploy our AWS resources. Navigate to the `Actions` tab in your forked repository and click on the `create aws resources` workflow. Once on the `create aws resources` workflow page, select `Run workflow` and choose the Github Environment previously created. Additionally, specify the number of IAM users to create and EC2 instances to create.
 
 When you no longer need the resources in AWS, run the `delete aws resources` workflow targeting the Github Environment that was used when running the `create aws resources` workflow.
+
+***WARNING***: The `delete aws resources` workflow is **VERY** aggressive as it tries to delete all S3 Buckets, CloudWatch Log Groups, and CloudFormation Templates in the targeted AWS account. Please be sure to examine what the workflow does before using it.

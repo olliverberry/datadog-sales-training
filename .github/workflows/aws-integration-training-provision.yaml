@@ -4,14 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'the Github Environment that specifies where to create the AWS stack'
+        description: 'the Github Environment that specifies where to create the AWS stack.'
         type: environment
         required: true
       numberOfIamUsersToCreate:
-        description: 'the number of IAM users to create'
+        description: 'the number of IAM users to create.'
         type: string
         default: '10'
         required: true
+      numberOfEC2InstancesToCreate:
+        description: 'the number of EC2 instances to create.'
+        type: number
+        default: 1
+        required: false
 
 defaults:
   run:
@@ -41,11 +46,28 @@ jobs:
         Write-Output "iam-users=$IamUsers" >> "$env:GITHUB_OUTPUT"
       env:
         NUM_USERS: ${{ inputs.numberOfIamUsersToCreate }}
+
+    - id: create-ec2-numbers-string
+      name: Create EC2 Numbers String
+      shell: pwsh
+      working-directory: ./aws-integration
+      run: |
+        $NumEC2S = ""
+        if ((-not [int]::TryParse("$env:NUM_EC2S", [ref]$NumEC2S)) -or $NumEC2S -le 0)
+        {
+            Write-Error -Message "invalid number of ec2 instances to create. supply a non-zero positive integer"
+            exit 1
+        }
+        
+        $EC2S = 1 .. $NumEC2S | Join-String -Property $_ -Separator "\\,"
+        Write-Output "ec2s=$EC2S" >> "$env:GITHUB_OUTPUT"
+      env:
+        NUM_EC2S: ${{ inputs.numberOfEC2InstancesToCreate }}
         
     - id: get-ami-id
       name: Get AMI Id
       run: |
-        export IMAGE_ID=$(aws ec2 describe-images \
+        IMAGE_ID=$(aws ec2 describe-images \
           --owners amazon \
           --filters Name=name,Values="al2023-ami-2023.3.20240219.0-kernel-6.1-x86_64" \
           --query "Images[*].ImageId" \
@@ -65,7 +87,8 @@ jobs:
           --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM CAPABILITY_IAM \
           --parameters ParameterKey=IAMUserPassword,ParameterValue="${{ secrets.IAM_USER_PASSWORD }}" \
           ParameterKey=IAMUserNames,ParameterValue="${{ steps.create-iam-users-string.outputs.iam-users }}" \
-          ParameterKey=AmiId,ParameterValue="${{ steps.get-ami-id.outputs.ami-id}}"
+          ParameterKey=AmiId,ParameterValue="${{ steps.get-ami-id.outputs.ami-id}}" \
+          ParameterKey=EC2sString,ParameterValue="${{ steps.create-ec2-numbers-string.outputs.ec2s}}"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

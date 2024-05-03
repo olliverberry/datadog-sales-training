@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'the Github environment to delete the AWS Stack in'
+        description: 'the Github environment to delete the AWS Stack in.'
         type: environment
         required: true
+      hardDelete:
+        description: 'whether or not to perform an aggressive cleanup of AWS resources created. use with caution.'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   delete-aws-infrastructure:
@@ -22,6 +27,12 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+  aggressive-aws-cleanup:
+    needs: [delete-aws-infrastructure]
+    if: ${{ inputs.hardDelete }}
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
     - name: Cleanup Orphaned S3 Buckets
       run: |
         echo "Getting s3 buckets"

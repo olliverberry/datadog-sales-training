@@ -7,6 +7,20 @@ on:
         description: 'the Github Environment that specifies where to create the Azure resources.'
         type: environment
         required: true
+      numberOfAzureUsers:
+        description: 'the number of Azure users to create.'
+        type: number
+        required: false
+        default: 1
+      azureRegion:
+        description: 'the azure region to deploy resources into.'
+        type: choice
+        required: false
+        default: 'Central US'
+        options:
+          - 'Central US'
+          - 'East US'
+          - 'East US 2'
 
 jobs:
   create-azure-infrastructure:
@@ -14,3 +28,70 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v3
+
+      - name: Log in with Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+      
+      - id: setup-azure
+        name: Setup Azure Environment
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            $password = ConvertTo-SecureString -String "${{ secrets.AZURE_USER_PASSWORD }}" -AsPlainText -Force
+            $resourceGroups = ./azure-integration/infrastructure/scripts/setup-azure.ps1 `
+              -NumberOfUsers "${{ inputs.numberOfAzureUsers }}" `
+              -DomainName "${{ vars.AZURE_DOMAIN_NAME }}" `
+              -Password $password `
+              -OwnerId "${{ secrets.AZURE_OWNER_ID }}" `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+              -DefaultResourceGroup "${{ vars.AZURE_RESOURCE_GROUP }}" `
+              -Location "${{ inputs.azureRegion }}"
+            
+            "RESOURCE_GROUPS=$resourceGroups" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          azPSVersion: 'latest'
+
+      - id: calculate-webapp-count
+        name: Calculate Web App Count
+        shell: pwsh
+        run: |
+          $webAppCount = [int][Math]::Ceiling(${{ inputs.numberOfAzureUsers }} / 5)
+          "WEB_APP_COUNT=$webAppCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - id: deploy-bicep
+        name: Deploy Bicep File
+        continue-on-error: true
+        uses: azure/arm-deploy@v2
+        timeout-minutes: 20
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
+          template: ./azure-integration/infrastructure/bicep/main.bicep
+          parameters: 'resourceGroups="${{ steps.setup-azure.outputs.RESOURCE_GROUPS }}" adminPassword="${{ secrets.AZURE_USER_PASSWORD }}" webAppCount="${{ steps.calculate-webapp-count.outputs.WEB_APP_COUNT }}"'
+          failOnStdErr: false
+
+      - name: Check Bicep Deployment Status
+        uses: azure/powershell@v2
+        with:
+          inlineScript: |
+            Write-Host "Checking resource group deployment statuses."
+            $foundBadDeployment = $false
+            $resourceGroups = Get-AzResourceGroup -Tag @{ company="datadog" }
+            foreach ($rg in $resourceGroups) {
+              $deployments = Get-AzResourceGroupDeployment -ResourceGroupName $rg.ResourceGroupName
+              foreach ($deployment in $deployments) {
+                if ($deployment.ProvisioningState -ne "succeeded") {
+                  $foundBadDeployment = $true
+                  Write-Host "Resource group deployment '$($deployment.DeploymentName)' in resource group '$($rg.ResourceGroupName)' has provisioning state '$($deployment.ProvisioningState)'."
+                  Write-Host "Please check this resource group deployment in Azure and re-deploy if neccessary."
+                }
+              }
+            }
+
+            if (-not $foundBadDeployment) {
+              Write-Host "All resource group deployments were provisioned successfully."
+            }
+          azPSVersion: 'latest'
+

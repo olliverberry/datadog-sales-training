@@ -14,8 +14,8 @@ Parameters:
   IAMUserPassword:
     Type: String
     Description: password for IAM users
-    MinLength: 10
-    MaxLength: 40
+    MinLength: "10"
+    MaxLength: "40"
 
   AmiId:
     Type: String
@@ -35,6 +35,11 @@ Parameters:
     Type: String
     Description: The name of the S3 bucket to store logs
     Default: datadog-sales-training-s3-bucket
+
+  EC2sString:
+    Type: CommaDelimitedList
+    Description: The number of EC2s to create
+    Default: "1"
 
 Resources:
   'Fn::ForEach::CreateIAMUsers':
@@ -187,30 +192,31 @@ Resources:
       KeyName: sales-training-kp
       KeyType: ed25519
 
-  SalesTrainingEc2Instance: 
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: !Ref AmiId
-      KeyName: 
-        Ref: SalesTrainingKeyPair
-      NetworkInterfaces: 
-        - AssociatePublicIpAddress: true
-          DeviceIndex: "0"
-          GroupSet: 
-            - Ref: SalesTrainingSSHSecurityGroup
-            - Ref: SalesTrainingOutboundSecurityGroup
-          SubnetId: 
-            Ref: SalesTrainingPublicSubnet
-      Tags:
-        - Key: Name
-          Value: datadog-sales-ec2
-        - Key: env
-          Value: development
-        - Key: company
-          Value: datadog
-        - Key: business_unit
-          Value: sales-training
+  'Fn::ForEach::CreateEC2s':
+    - EC2
+    - !Ref EC2sString
+    - '${EC2}':
+        Type: AWS::EC2::Instance
+        Properties:
+          InstanceType: t2.micro
+          ImageId: !Ref AmiId
+          KeyName: !Ref SalesTrainingKeyPair
+          NetworkInterfaces: 
+            - AssociatePublicIpAddress: true
+              DeviceIndex: "0"
+              GroupSet: 
+                - !Ref SalesTrainingSSHSecurityGroup
+                - !Ref SalesTrainingOutboundSecurityGroup
+              SubnetId: !Ref SalesTrainingPublicSubnet
+          Tags:
+            - Key: Name
+              Value: !Join [ "", [ 'datadog-sales-ec2', '-vm', !Ref EC2 ] ]
+            - Key: env
+              Value: development
+            - Key: company
+              Value: datadog
+            - Key: business_unit
+              Value: sales-training
 
   SalesTrainingSNSTopic:
     Type: AWS::SNS::Topic
@@ -248,7 +254,7 @@ Resources:
           Value: datadog
         - Key: business_unit
           Value: sales-training
-      
+
   SalesTrainingLogGroup: 
     Type: AWS::Logs::LogGroup
     Properties: 
